@@ -1,3 +1,4 @@
 src/*.o
 bin/*.dll
 bin/*.exe
+*.zip

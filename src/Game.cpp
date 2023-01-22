@@ -98,6 +98,8 @@ private:
     , MI640x480
     , MI800x600
     , MI1024x768
+    , MI1366x768
+    , MI1920x1080
     , MITexture1
   };
   
@@ -253,6 +255,8 @@ void GameImpl::createMenus()
   _optionsMenu.add("640x480", MI640x480);
   _optionsMenu.add("800x600", MI800x600);
   _optionsMenu.add("1024x768", MI1024x768);
+  _optionsMenu.add("1366x768", MI1366x768);
+  _optionsMenu.add("1920x1080", MI1920x1080);
   
   for (size_t i=0; i<_textureImageDatas.size(); ++i) {
     TCHAR s[128];
@@ -304,6 +308,7 @@ void GameImpl::loadImages()
   for (size_t i=0 ;i<paths.size(); ++i) {
     string path = paths[i];
     Bitmap bmp;
+    printf("Loading image %s\n", path.c_str());
     if (!bmp.loadFile(path.c_str())) {
       string error = "Error loading " + path;
       throw std::runtime_error(error.c_str());
@@ -366,6 +371,8 @@ LRESULT GameImpl::handleMessage( UINT msg, WPARAM wParam, LPARAM lParam )
         case MI640x480: _clientWidth=640, _clientHeight=480; resetGame(); break;
         case MI800x600: _clientWidth=800, _clientHeight=600; resetGame(); break;
         case MI1024x768: _clientWidth=1024, _clientHeight=768; resetGame(); break;
+        case MI1366x768: _clientWidth=1366, _clientHeight=768; resetGame(); break;
+        case MI1920x1080: _clientWidth=1920, _clientHeight=1080; resetGame(); break;
         
         case MIExit: {
           stopTimer();
