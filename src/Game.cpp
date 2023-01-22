@@ -94,6 +94,10 @@ private:
     , MIAffine
     , MIPerspectiveCorrect
     , MIWireframe
+    , MI640x360
+    , MI640x480
+    , MI800x600
+    , MI1024x768
     , MITexture1
   };
   
@@ -131,6 +135,9 @@ private:
   bool              _backfaceCullingOn;
   vector<ImageData> _textureImageDatas;
   
+  int _clientWidth = CLIENT_WIDTH;
+  int _clientHeight = CLIENT_HEIGHT;
+
   int           iTimerId;            //  Multimedia timer id.
   float _xrot, _yrot;
   DWORD  _currentFPS, _fps, _pastFps, _past;
@@ -183,13 +190,13 @@ GameImpl::GameImpl()
   Tests::run();
   loadImages();
   createMenus();
-  setClientSize(this->hwnd, CLIENT_WIDTH, CLIENT_HEIGHT);
-  bufferDC.create(CLIENT_WIDTH, CLIENT_HEIGHT);
-  prepareScreenImageData();
+
+  setClientSize(this->hwnd, _clientWidth, _clientHeight);
   centerWindow(this->hwnd);
   ShowWindow( hwnd, SW_SHOWNORMAL ) ;
   
-  startTimer();
+//  startTimer();
+  resetGame();
 }
 
 GameImpl::~GameImpl()
@@ -241,6 +248,11 @@ void GameImpl::createMenus()
   _optionsMenu.add("Perspective Correct", MIPerspectiveCorrect);
   _optionsMenu.addSeparator();
   _optionsMenu.add("Wireframe", MIWireframe);
+  _optionsMenu.addSeparator();
+  _optionsMenu.add("640x360", MI640x360);
+  _optionsMenu.add("640x480", MI640x480);
+  _optionsMenu.add("800x600", MI800x600);
+  _optionsMenu.add("1024x768", MI1024x768);
   
   for (size_t i=0; i<_textureImageDatas.size(); ++i) {
     TCHAR s[128];
@@ -259,8 +271,8 @@ void GameImpl::prepareScreenImageData()
 {
   _bmih = {0};
   _bmih.biSize     = sizeof(BITMAPINFOHEADER);
-  _bmih.biWidth    = CLIENT_WIDTH;
-  _bmih.biHeight   = -CLIENT_HEIGHT;
+  _bmih.biWidth    = _clientWidth;
+  _bmih.biHeight   = -_clientHeight;
   _bmih.biPlanes   = 1;
   _bmih.biBitCount = 32;
   _bmih.biCompression  = BI_RGB ;
@@ -276,7 +288,7 @@ void GameImpl::prepareScreenImageData()
 //  dbmi.bmiColors->rgbGreen = 0;
 //  dbmi.bmiColors->rgbRed = 0;
 //  dbmi.bmiColors->rgbReserved = 0;
-  screenImageData.create(CLIENT_WIDTH, CLIENT_HEIGHT);
+  screenImageData.create(_clientWidth, _clientHeight);
 }
 
 void GameImpl::loadImages()
@@ -349,6 +361,11 @@ LRESULT GameImpl::handleMessage( UINT msg, WPARAM wParam, LPARAM lParam )
         case MIWireframe:
           _drawWireframe = !_drawWireframe;
           break;
+
+        case MI640x360: _clientWidth=640, _clientHeight=360; resetGame(); break;
+        case MI640x480: _clientWidth=640, _clientHeight=480; resetGame(); break;
+        case MI800x600: _clientWidth=800, _clientHeight=600; resetGame(); break;
+        case MI1024x768: _clientWidth=1024, _clientHeight=768; resetGame(); break;
         
         case MIExit: {
           stopTimer();
@@ -370,6 +387,9 @@ LRESULT GameImpl::handleMessage( UINT msg, WPARAM wParam, LPARAM lParam )
     {
       WORD key = static_cast<WORD>( wParam );
       _keys[key] = true;
+      if (_keys['R']) {
+        resetGame();
+      }
       return 0 ; 
     }
     
@@ -391,6 +411,10 @@ LRESULT GameImpl::handleMessage( UINT msg, WPARAM wParam, LPARAM lParam )
         _optionsMenu.setMenuItemChecked( MIAffine, _drawType == DrawAffine );
         _optionsMenu.setMenuItemChecked( MIPerspectiveCorrect, _drawType == DrawPerspectiveCorrect );
         _optionsMenu.setMenuItemChecked( MIWireframe, _drawWireframe );
+        _optionsMenu.setMenuItemChecked( MI640x360, _clientWidth==640 && _clientHeight==360 );
+        _optionsMenu.setMenuItemChecked( MI640x480, _clientWidth==640 && _clientHeight==480);
+        _optionsMenu.setMenuItemChecked( MI800x600, _clientWidth==800 && _clientHeight==600);
+        _optionsMenu.setMenuItemChecked( MI1024x768, _clientWidth==1024 && _clientHeight==768);
       }
       else if (hMenu == _textureMenu) {
 //        _textureMenu.setMenuItemChecked( MITexture1+_textureID, true);
@@ -536,11 +560,16 @@ void GameImpl::updateFPS()
 
 void GameImpl::resetGame()
 {
+  stopTimer();
+  setClientSize(this->hwnd, _clientWidth, _clientHeight);
   _xrot = 0;
   _yrot = 0;
   _worldX = 0;
   _worldY = 0;
   _worldZ = -200;
+  bufferDC.create(_clientWidth, _clientHeight);
+  prepareScreenImageData();
+  startTimer();
 }
 
 void GameImpl::updateGame()
@@ -611,7 +640,7 @@ void GameImpl::drawWorld(HDC hdc)
     float zfar = 1000.f;
     
     glm::mat4 translate = glm::translate(glm::mat4(1), glm::vec3(_worldX, _worldY, _worldZ));
-    glm::mat4 proj = glm::perspective(fovyrad, CLIENT_WIDTH/(float)CLIENT_HEIGHT, znear, zfar);
+    glm::mat4 proj = glm::perspective(fovyrad, _clientWidth/(float)_clientHeight, znear, zfar);
     glm::mat4 viewProj = proj * translate;
 
     Vertex* vertices = t->getVertices();
@@ -634,9 +663,9 @@ void GameImpl::drawWorld(HDC hdc)
       }
     }
     
-    glm::vec4 win1 = ndcToWindow(ndc1, CLIENT_WIDTH, CLIENT_HEIGHT);
-    glm::vec4 win2 = ndcToWindow(ndc2, CLIENT_WIDTH, CLIENT_HEIGHT);
-    glm::vec4 win3 = ndcToWindow(ndc3, CLIENT_WIDTH, CLIENT_HEIGHT);
+    glm::vec4 win1 = ndcToWindow(ndc1, _clientWidth, _clientHeight);
+    glm::vec4 win2 = ndcToWindow(ndc2, _clientWidth, _clientHeight);
+    glm::vec4 win3 = ndcToWindow(ndc3, _clientWidth, _clientHeight);
     
     static bool runOnce = false;
     if (!runOnce && i==0) {
@@ -645,8 +674,8 @@ void GameImpl::drawWorld(HDC hdc)
       printf("fovyrad=%f\n,", fovyrad);
       printf("znear=%f\n,", znear);
       printf("zfar=%f\n,", zfar);
-      printf("viewport width=%d", CLIENT_WIDTH);
-      printf("viewport height=%d", CLIENT_HEIGHT);
+      printf("viewport width=%d", _clientWidth);
+      printf("viewport height=%d", _clientHeight);
       printf("t->color()=%d\n", t->color());
       printf("v1 = %s\n", glm::to_string(v1).c_str());
       printf("translate = %s\n", glm::to_string(translate).c_str());
