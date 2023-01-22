@@ -22,8 +22,18 @@ public:
   {
     return _vertices;  
   }
+
+  Vertex& vertex(int i)
+  {
+    return _vertices[i];
+  }
+
+  Vector4f& texcoord(int i)
+  {
+    return _vertices[i].texcoords();
+  }
   
-  std::uint32_t color()
+  std::uint32_t& color()
   {
     return _color;
   }

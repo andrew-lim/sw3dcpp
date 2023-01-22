@@ -21,6 +21,14 @@ public:
     parts[2] = z;
     parts[3] = w;
   }
+
+  Vector4f(const glm::vec4& v)
+  {
+    parts[0] = v[0];
+    parts[1] = v[1];
+    parts[2] = v[2];
+    parts[3] = v[3];
+  }
   
   glm::vec4 vec4()
   {

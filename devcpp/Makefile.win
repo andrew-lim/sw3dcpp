@@ -5,15 +5,15 @@ CPP      = g++.exe
 CC       = gcc.exe
 WINDRES  = windres.exe
 RES      = sw3dcpp_private.res
-OBJ      = ../src/Bitmap.o ../src/BufferDC.o ../src/Game.o ../src/Graphics2D.o ../src/ImageData.o ../src/main.o ../src/Menu.o ../src/Tests.o ../src/Triangle.o ../src/Window.o $(RES)
-LINKOBJ  = ../src/Bitmap.o ../src/BufferDC.o ../src/Game.o ../src/Graphics2D.o ../src/ImageData.o ../src/main.o ../src/Menu.o ../src/Tests.o ../src/Triangle.o ../src/Window.o $(RES)
+OBJ      = ../src/Bitmap.o ../src/BufferDC.o ../src/Game.o ../src/Graphics2D.o ../src/ImageData.o ../src/main.o ../src/Menu.o ../src/Tests.o ../src/Triangle.o ../src/Window.o ../src/ClipSpace.o $(RES)
+LINKOBJ  = ../src/Bitmap.o ../src/BufferDC.o ../src/Game.o ../src/Graphics2D.o ../src/ImageData.o ../src/main.o ../src/Menu.o ../src/Tests.o ../src/Triangle.o ../src/Window.o ../src/ClipSpace.o $(RES)
 LIBS     = -L"C:/Program Files (x86)/Embarcadero/Dev-Cpp/TDM-GCC-64/lib" -L"C:/Program Files (x86)/Embarcadero/Dev-Cpp/TDM-GCC-64/x86_64-w64-mingw32/lib" -static-libgcc -mwindows -lwinmm -mconsole
 INCS     = -I"C:/Program Files (x86)/Embarcadero/Dev-Cpp/TDM-GCC-64/include" -I"C:/Program Files (x86)/Embarcadero/Dev-Cpp/TDM-GCC-64/x86_64-w64-mingw32/include" -I"C:/Program Files (x86)/Embarcadero/Dev-Cpp/TDM-GCC-64/lib/gcc/x86_64-w64-mingw32/9.2.0/include" -I"C:/Projects/cpp/sw3dcpp/src"
 CXXINCS  = -I"C:/Program Files (x86)/Embarcadero/Dev-Cpp/TDM-GCC-64/include" -I"C:/Program Files (x86)/Embarcadero/Dev-Cpp/TDM-GCC-64/x86_64-w64-mingw32/include" -I"C:/Program Files (x86)/Embarcadero/Dev-Cpp/TDM-GCC-64/lib/gcc/x86_64-w64-mingw32/9.2.0/include" -I"C:/Program Files (x86)/Embarcadero/Dev-Cpp/TDM-GCC-64/lib/gcc/x86_64-w64-mingw32/9.2.0/include/c++" -I"C:/Projects/cpp/sw3dcpp/src"
 BIN      = ../bin/sw3dcpp.exe
-CXXFLAGS = $(CXXINCS) -Wall -pedantic -O3
+CXXFLAGS = $(CXXINCS) -Wall -pedantic
 CFLAGS   = $(INCS) 
-DEL      = C:\Program Files (x86)\Embarcadero\Dev-Cpp\devcpp.exe INTERNAL_DEL
+DEL      = C:\Program Files (x86)\Embarcadero\Dev-Cpp\DevCpp.exe INTERNAL_DEL
 
 .PHONY: all all-before all-after clean clean-custom
 
@@ -54,6 +54,9 @@ $(BIN): $(OBJ)
 
 ../src/Window.o: ../src/Window.cpp
 	$(CPP) -c ../src/Window.cpp -o ../src/Window.o $(CXXFLAGS)
+
+../src/ClipSpace.o: ../src/ClipSpace.cpp
+	$(CPP) -c ../src/ClipSpace.cpp -o ../src/ClipSpace.o $(CXXFLAGS)
 
 sw3dcpp_private.res: sw3dcpp_private.rc ../src/resource.rc
 	$(WINDRES) -i sw3dcpp_private.rc --input-format=rc -o sw3dcpp_private.res -O coff 

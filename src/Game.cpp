@@ -25,6 +25,7 @@
 #include <map>
 #include "Menu.h"
 #include "Tests.h"
+#include "ClipSpace.h"
 using namespace std ;
 using namespace al::graphics;
 using namespace glm;
@@ -37,15 +38,15 @@ const int DESIRED_FPS = 60;
 const int UPDATE_INTERVAL = 1000/DESIRED_FPS;
 #define TIMER_DELAY UPDATE_INTERVAL             //  Refresh rate in milliseconds.
 
-glm::mat4 camera(float Translate, glm::vec2 const& Rotate)
-{
-	glm::mat4 Projection = glm::perspective(glm::pi<float>() * 0.25f, 4.0f / 3.0f, 0.1f, 100.f);
-	glm::mat4 View = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.0f, -Translate));
-	View = glm::rotate(View, Rotate.y, glm::vec3(-1.0f, 0.0f, 0.0f));
-	View = glm::rotate(View, Rotate.x, glm::vec3(0.0f, 1.0f, 0.0f));
-	glm::mat4 Model = glm::scale(glm::mat4(1.0f), glm::vec3(0.5f));
-	return Projection * View * Model;
-}
+// glm::mat4 camera(float Translate, glm::vec2 const& Rotate)
+// {
+// 	glm::mat4 Projection = glm::perspective(glm::pi<float>() * 0.25f, 4.0f / 3.0f, 0.1f, 100.f);
+// 	glm::mat4 View = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.0f, -Translate));
+// 	View = glm::rotate(View, Rotate.y, glm::vec3(-1.0f, 0.0f, 0.0f));
+// 	View = glm::rotate(View, Rotate.x, glm::vec3(0.0f, 1.0f, 0.0f));
+// 	glm::mat4 Model = glm::scale(glm::mat4(1.0f), glm::vec3(0.5f));
+// 	return Projection * View * Model;
+// }
 
 glm::vec4 clipToNDC(glm::vec4 clip)
 {
@@ -494,47 +495,47 @@ void GameImpl::createMesh()
 
   t = new Triangle(leftX, bottomY, frontZ, rightX, bottomY, frontZ, rightX, topY, frontZ, pink);
   t->setTexUVs(0.0, 1.0, 1.0, 1.0, 1.0, 0.0);
-  mesh.push_back(t);
+   mesh.push_back(t);
   
   // East
   t = new Triangle(rightX, topY, frontZ, rightX, bottomY, frontZ, rightX, topY, backZ, green);
   t->setTexUVs(0.0, 0.0, 0.0, 1.0, 1.0, 0.0);
-  mesh.push_back(t);
+    mesh.push_back(t);
   t = new Triangle(rightX, bottomY, frontZ, rightX, bottomY, backZ, rightX, topY, backZ, green);
   t->setTexUVs(0.0, 1.0, 1.0, 1.0, 1.0, 0.0);
-  mesh.push_back(t);
+    mesh.push_back(t);
   
   // North
   t = new Triangle(rightX, topY, backZ, rightX, bottomY, backZ, leftX, topY, backZ, blue);
   t->setTexUVs(0.0, 0.0, 0.0, 1.0, 1.0, 0.0);
-  mesh.push_back(t);
+    mesh.push_back(t);
   t = new Triangle(rightX, bottomY, backZ, leftX, bottomY, backZ, leftX, topY, backZ, blue);
   t->setTexUVs(0.0, 1.0, 1.0, 1.0, 1.0, 0.0);
-  mesh.push_back(t);
+    mesh.push_back(t);
 
   // West
   t = new Triangle(leftX, topY, backZ, leftX, bottomY, backZ, leftX, topY, frontZ, red);
   t->setTexUVs(0.0, 0.0, 0.0, 1.0, 1.0, 0.0);
-  mesh.push_back(t);
+    mesh.push_back(t);
   t = new Triangle(leftX, bottomY, backZ, leftX, bottomY, frontZ, leftX, topY, frontZ, red);
   t->setTexUVs(0.0, 1.0, 1.0, 1.0, 1.0, 0.0);
-  mesh.push_back(t);
+    mesh.push_back(t);
 
   // Top
   t = new Triangle(leftX, topY, backZ, leftX, topY, frontZ, rightX, topY, backZ, yellow);
   t->setTexUVs(0.0, 0.0, 0.0, 1.0, 1.0, 0.0);
-  mesh.push_back(t);
+    mesh.push_back(t);
   t = new Triangle(leftX, topY, frontZ, rightX, topY, frontZ, rightX, topY, backZ, yellow);
   t->setTexUVs(0.0, 1.0, 1.0, 1.0, 1.0, 0.0);
-  mesh.push_back(t);
+    mesh.push_back(t);
 
   // Bottom
   t = new Triangle(leftX, bottomY, frontZ, leftX, bottomY, backZ, rightX, bottomY, frontZ, violet);
   t->setTexUVs(0.0, 0.0, 0.0, 1.0, 1.0, 0.0);
-  mesh.push_back(t);
+    mesh.push_back(t);
   t = new Triangle(leftX, bottomY, backZ, rightX, bottomY, backZ, rightX, bottomY, frontZ, violet);
   t->setTexUVs(0.0, 1.0, 1.0, 1.0, 1.0, 0.0);
-  mesh.push_back(t);
+    mesh.push_back(t);
 
   for (size_t i=0; i<mesh.size(); i++) {
     Triangle* t = mesh[i];
@@ -639,7 +640,6 @@ void GameImpl::drawWorld(HDC hdc)
   
   for (size_t i=0; i<mesh.size(); ++i) {
     Triangle* t = mesh[i];
-    Triangle& triangle = *t;
     
     float fovydeg = 90.0f;
     float fovyrad = glm::radians(fovydeg);
@@ -658,74 +658,91 @@ void GameImpl::drawWorld(HDC hdc)
     glm::vec4 clip1 = viewProj * v1;
     glm::vec4 clip2 = viewProj * v2;
     glm::vec4 clip3 = viewProj * v3;
-    
-    glm::vec4 ndc1 = clipToNDC(clip1);
-    glm::vec4 ndc2 = clipToNDC(clip2);
-    glm::vec4 ndc3 = clipToNDC(clip3);
-    
-    float xprod = 0;
-    if (_backfaceCullingOn) {
-      if ((xprod=Graphics2D::crossProduct2D<glm::vec4>(ndc1, ndc2, ndc3))<0) {
-        continue;
+
+    // Create a triangle with clip coordinates
+    Vertex clipVertex1 = Vertex(Vector4f(clip1), t->texcoord(0));
+    Vertex clipVertex2 = Vertex(Vector4f(clip2), t->texcoord(1));
+    Vertex clipVertex3 = Vertex(Vector4f(clip3), t->texcoord(2));
+    Triangle triangleToClip(clipVertex1, clipVertex2, clipVertex3);
+    triangleToClip.color() = t->color();
+
+    vector<Triangle> trianglesToClip;
+    trianglesToClip.push_back(triangleToClip);
+
+    // Clip the triangle to the frustrum volume
+    vector<Triangle> clippedTriangles = ClipSpace::clipTrianglesByAllPlanes(trianglesToClip);
+
+    for (size_t i=0; i<clippedTriangles.size(); ++i) {
+      Triangle triangle = clippedTriangles[i];
+
+      glm::vec4 ndc1 = clipToNDC(triangle.vertex(0).pos().vec4());
+      glm::vec4 ndc2 = clipToNDC(triangle.vertex(1).pos().vec4());
+      glm::vec4 ndc3 = clipToNDC(triangle.vertex(2).pos().vec4());
+
+      float xprod = 0;
+      if (_backfaceCullingOn) {
+        if ((xprod=Graphics2D::crossProduct2D<glm::vec4>(ndc1, ndc2, ndc3))<0) {
+          continue;
+        }
+      }
+
+      glm::vec4 win1 = ndcToWindow(ndc1, _clientWidth, _clientHeight);
+      glm::vec4 win2 = ndcToWindow(ndc2, _clientWidth, _clientHeight);
+      glm::vec4 win3 = ndcToWindow(ndc3, _clientWidth, _clientHeight);
+
+      static bool runOnce = false;
+      if (!runOnce && i==0) {
+        runOnce = true;
+        printf("fovydeg=%f\n,", fovydeg);
+        printf("fovyrad=%f\n,", fovyrad);
+        printf("znear=%f\n,", znear);
+        printf("zfar=%f\n,", zfar);
+        printf("viewport width=%d", _clientWidth);
+        printf("viewport height=%d", _clientHeight);
+        printf("t->color()=%d\n", t->color());
+        printf("v1 = %s\n", glm::to_string(v1).c_str());
+        printf("translate = %s\n", glm::to_string(translate).c_str());
+        printf("proj = %s\n", glm::to_string(proj).c_str());
+        printf("viewProj = %s\n", glm::to_string(viewProj).c_str());
+        printf("clip1 = %s\n", glm::to_string(clip1).c_str());
+        printf("ndc1 = %s\n", glm::to_string(ndc1).c_str());
+        printf("win1 = %s\n", glm::to_string(win1).c_str());
+        printf("xprod=%f\n", xprod);
+      }
+
+      if (_drawType==DrawSolid) {
+        Graphics2D::fillTriangle(screenImageData,
+                                 win1[0], win1[1],
+                                 win2[0], win2[1],
+                                 win3[0], win3[1],
+                                 t->color());
+      }
+
+      else if (_drawType==DrawAffine) {
+        Graphics2D::affineTriangle(screenImageData,
+                                   win1[0], win1[1], triangle.getTexU(0), triangle.getTexV(0),
+                                   win2[0], win2[1], triangle.getTexU(1), triangle.getTexV(1),
+                                   win3[0], win3[1], triangle.getTexU(2), triangle.getTexV(2),
+                                   _textureImageDatas[_textureID]);
+      }
+
+      else if (_drawType==DrawPerspectiveCorrect) {
+        Graphics2D::texturedTriangle(screenImageData,
+                                     win1[0], win1[1], triangle.getW(0), triangle.getTexU(0), triangle.getTexV(0),
+                                     win2[0], win2[1], triangle.getW(1), triangle.getTexU(1), triangle.getTexV(1),
+                                     win3[0], win3[1], triangle.getW(2), triangle.getTexU(2), triangle.getTexV(2),
+                                     _textureImageDatas[_textureID]);
+      }
+
+      if (_drawWireframe) {
+        Graphics2D::triangleWire(screenImageData,
+                                 win1[0], win1[1],
+                                 win2[0], win2[1],
+                                 win3[0], win3[1],
+                                 ImageData::makePixel(0, 255, 255));
       }
     }
-    
-    glm::vec4 win1 = ndcToWindow(ndc1, _clientWidth, _clientHeight);
-    glm::vec4 win2 = ndcToWindow(ndc2, _clientWidth, _clientHeight);
-    glm::vec4 win3 = ndcToWindow(ndc3, _clientWidth, _clientHeight);
-    
-    static bool runOnce = false;
-    if (!runOnce && i==0) {
-      runOnce = true;
-      printf("fovydeg=%f\n,", fovydeg);
-      printf("fovyrad=%f\n,", fovyrad);
-      printf("znear=%f\n,", znear);
-      printf("zfar=%f\n,", zfar);
-      printf("viewport width=%d", _clientWidth);
-      printf("viewport height=%d", _clientHeight);
-      printf("t->color()=%d\n", t->color());
-      printf("v1 = %s\n", glm::to_string(v1).c_str());
-      printf("translate = %s\n", glm::to_string(translate).c_str());
-      printf("proj = %s\n", glm::to_string(proj).c_str());
-      printf("viewProj = %s\n", glm::to_string(viewProj).c_str());
-      printf("clip1 = %s\n", glm::to_string(clip1).c_str());
-      printf("ndc1 = %s\n", glm::to_string(ndc1).c_str());
-      printf("win1 = %s\n", glm::to_string(win1).c_str());
-      printf("xprod=%f\n", xprod);
-    }
-    
-    if (_drawType==DrawSolid) {
-      Graphics2D::fillTriangle(screenImageData, 
-                               win1[0], win1[1], 
-                               win2[0], win2[1],
-                               win3[0], win3[1],
-                               t->color());    
-    }
-
-    else if (_drawType==DrawAffine) {
-      Graphics2D::affineTriangle(screenImageData, 
-                                 win1[0], win1[1], triangle.getTexU(0), triangle.getTexV(0),
-                                 win2[0], win2[1], triangle.getTexU(1), triangle.getTexV(1),
-                                 win3[0], win3[1], triangle.getTexU(2), triangle.getTexV(2),
-                                 _textureImageDatas[_textureID]);
-    }
-
-    else if (_drawType==DrawPerspectiveCorrect) {
-      Graphics2D::texturedTriangle(screenImageData, 
-                                   win1[0], win1[1], clip1[3], triangle.getTexU(0), triangle.getTexV(0),
-                                   win2[0], win2[1], clip2[3], triangle.getTexU(1), triangle.getTexV(1),
-                                   win3[0], win3[1], clip3[3], triangle.getTexU(2), triangle.getTexV(2),
-                                   _textureImageDatas[_textureID]);
-    }
-
-    if (_drawWireframe) {
-      Graphics2D::triangleWire(screenImageData, 
-                               win1[0], win1[1], 
-                               win2[0], win2[1],
-                               win3[0], win3[1],
-                               ImageData::makePixel(0, 255, 255));
-    }
-  }
+  } // for mesh.size()
   
   SetDIBitsToDevice(hdc, 
     0, 0, screenImageData.width(), screenImageData.height(), 

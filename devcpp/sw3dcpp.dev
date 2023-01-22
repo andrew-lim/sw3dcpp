@@ -10,7 +10,7 @@ PrivateResource=sw3dcpp_private.rc
 ResourceIncludes=
 MakeIncludes=
 Compiler=
-CppCompiler=-Wall_@@_-pedantic_@@_
+CppCompiler=-Wall_@@_-pedantic_@@_-O3_@@_
 Linker=-lwinmm_@@_-mconsole_@@_
 IsCpp=1
 Icon=
@@ -29,7 +29,7 @@ IncludeVersionInfo=0
 SupportXPThemes=0
 CompilerSet=0
 CompilerSettings=0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;8;0;0;0
-UnitCount=23
+UnitCount=25
 
 [VersionInfo]
 Major=1
@@ -275,6 +275,26 @@ FileName=..\src\resource.rc
 Folder=Resources
 Compile=1
 Link=0
+Priority=1000
+OverrideBuildCmd=0
+BuildCmd=
+
+[Unit24]
+FileName=..\src\ClipSpace.h
+CompileCpp=1
+Folder=
+Compile=1
+Link=1
+Priority=1000
+OverrideBuildCmd=0
+BuildCmd=
+
+[Unit25]
+FileName=..\src\ClipSpace.cpp
+CompileCpp=1
+Folder=
+Compile=1
+Link=1
 Priority=1000
 OverrideBuildCmd=0
 BuildCmd=
