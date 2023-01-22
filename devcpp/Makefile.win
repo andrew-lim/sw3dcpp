@@ -1,0 +1,60 @@
+# Project: sw3dcpp
+# Makefile created by Embarcadero Dev-C++ 6.3
+
+CPP      = g++.exe
+CC       = gcc.exe
+WINDRES  = windres.exe
+RES      = sw3dcpp_private.res
+OBJ      = ../src/Bitmap.o ../src/BufferDC.o ../src/Game.o ../src/Graphics2D.o ../src/ImageData.o ../src/main.o ../src/Menu.o ../src/Tests.o ../src/Triangle.o ../src/Window.o $(RES)
+LINKOBJ  = ../src/Bitmap.o ../src/BufferDC.o ../src/Game.o ../src/Graphics2D.o ../src/ImageData.o ../src/main.o ../src/Menu.o ../src/Tests.o ../src/Triangle.o ../src/Window.o $(RES)
+LIBS     = -L"C:/Program Files (x86)/Embarcadero/Dev-Cpp/TDM-GCC-64/lib" -L"C:/Program Files (x86)/Embarcadero/Dev-Cpp/TDM-GCC-64/x86_64-w64-mingw32/lib" -static-libgcc -mwindows -lwinmm -mconsole
+INCS     = -I"C:/Program Files (x86)/Embarcadero/Dev-Cpp/TDM-GCC-64/include" -I"C:/Program Files (x86)/Embarcadero/Dev-Cpp/TDM-GCC-64/x86_64-w64-mingw32/include" -I"C:/Program Files (x86)/Embarcadero/Dev-Cpp/TDM-GCC-64/lib/gcc/x86_64-w64-mingw32/9.2.0/include" -I"C:/Projects/cpp/sw3dcpp/src"
+CXXINCS  = -I"C:/Program Files (x86)/Embarcadero/Dev-Cpp/TDM-GCC-64/include" -I"C:/Program Files (x86)/Embarcadero/Dev-Cpp/TDM-GCC-64/x86_64-w64-mingw32/include" -I"C:/Program Files (x86)/Embarcadero/Dev-Cpp/TDM-GCC-64/lib/gcc/x86_64-w64-mingw32/9.2.0/include" -I"C:/Program Files (x86)/Embarcadero/Dev-Cpp/TDM-GCC-64/lib/gcc/x86_64-w64-mingw32/9.2.0/include/c++" -I"C:/Projects/cpp/sw3dcpp/src"
+BIN      = ../bin/sw3dcpp.exe
+CXXFLAGS = $(CXXINCS) -Wall -pedantic
+CFLAGS   = $(INCS) 
+DEL      = C:\Program Files (x86)\Embarcadero\Dev-Cpp\devcpp.exe INTERNAL_DEL
+
+.PHONY: all all-before all-after clean clean-custom
+
+all: all-before $(BIN) all-after
+
+clean: clean-custom
+	${DEL} $(OBJ) $(BIN)
+
+$(BIN): $(OBJ)
+	$(CPP) $(LINKOBJ) -o $(BIN) $(LIBS)
+
+../src/Bitmap.o: ../src/Bitmap.cpp
+	$(CPP) -c ../src/Bitmap.cpp -o ../src/Bitmap.o $(CXXFLAGS)
+
+../src/BufferDC.o: ../src/BufferDC.cpp
+	$(CPP) -c ../src/BufferDC.cpp -o ../src/BufferDC.o $(CXXFLAGS)
+
+../src/Game.o: ../src/Game.cpp
+	$(CPP) -c ../src/Game.cpp -o ../src/Game.o $(CXXFLAGS)
+
+../src/Graphics2D.o: ../src/Graphics2D.cpp
+	$(CPP) -c ../src/Graphics2D.cpp -o ../src/Graphics2D.o $(CXXFLAGS)
+
+../src/ImageData.o: ../src/ImageData.cpp
+	$(CPP) -c ../src/ImageData.cpp -o ../src/ImageData.o $(CXXFLAGS)
+
+../src/main.o: ../src/main.cpp
+	$(CPP) -c ../src/main.cpp -o ../src/main.o $(CXXFLAGS)
+
+../src/Menu.o: ../src/Menu.cpp
+	$(CPP) -c ../src/Menu.cpp -o ../src/Menu.o $(CXXFLAGS)
+
+../src/Tests.o: ../src/Tests.cpp
+	$(CPP) -c ../src/Tests.cpp -o ../src/Tests.o $(CXXFLAGS)
+
+../src/Triangle.o: ../src/Triangle.cpp
+	$(CPP) -c ../src/Triangle.cpp -o ../src/Triangle.o $(CXXFLAGS)
+
+../src/Window.o: ../src/Window.cpp
+	$(CPP) -c ../src/Window.cpp -o ../src/Window.o $(CXXFLAGS)
+
+sw3dcpp_private.res: sw3dcpp_private.rc ../src/resource.rc
+	$(WINDRES) -i sw3dcpp_private.rc --input-format=rc -o sw3dcpp_private.res -O coff 
+

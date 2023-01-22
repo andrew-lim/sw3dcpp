@@ -1,0 +1,2 @@
+#include "resource.h"
+ID_MANIFEST MANIFEST "..\\res\\sw3dcpp.exe.manifest"
