@@ -2,6 +2,7 @@
 #define ANDREW_LIM_VERTEX_H
 
 #include "Vector4f.h"
+#include "Vector2f.h"
 
 namespace al { namespace graphics {
 
@@ -10,7 +11,7 @@ class Vertex
 private:
   
   Vector4f _pos;
-  Vector4f _texcoords;
+  Vector2f _texcoords;
   
 public:
   
@@ -18,7 +19,7 @@ public:
   {
     return Vertex(
       Vector4f(x, y, 0, 0),
-      Vector4f(u, v)
+      Vector2f(u, v)
     );
   }
   
@@ -26,7 +27,7 @@ public:
   {
     return Vertex(
       Vector4f(x, y, 0, w),
-      Vector4f(u, v)
+      Vector2f(u, v)
     );
   }
   
@@ -37,7 +38,7 @@ public:
   }
   
   Vertex(const Vector4f& pos=Vector4f::zero(), 
-         const Vector4f& texcoords=Vector4f::zero())
+         const Vector2f& texcoords=Vector2f::zero())
   : _pos(pos)
   , _texcoords(texcoords)
   {
@@ -48,7 +49,7 @@ public:
     return _pos;
   }
   
-  Vector4f& texcoords()
+  Vector2f& texcoords()
   {
     return _texcoords;
   }
@@ -58,12 +59,12 @@ public:
     return _pos;
   }
 
-  Vector4f getTexCoords() const
+  Vector2f getTexCoords() const
   {
     return _texcoords;
   }
 
-  void setTexCoords(const Vector4f& texcoords)
+  void setTexCoords(const Vector2f& texcoords)
   {
     _texcoords = texcoords;
   }
@@ -126,7 +127,7 @@ public:
   Vertex lerp(const Vertex& other, float lerpFactor) const
   {
     const Vector4f& newPos = _pos.lerp(other._pos, lerpFactor);
-    const Vector4f& newTex = _texcoords.lerp(other._texcoords, lerpFactor);
+    const Vector2f& newTex = _texcoords.lerp(other._texcoords, lerpFactor);
     return Vertex(newPos, newTex);
   }
   

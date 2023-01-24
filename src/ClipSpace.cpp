@@ -13,9 +13,9 @@ float ClipSpace::findLerpFactor(const Vertex& src,
   return d1/(d1-d2);
 }
 
-vector<Triangle> ClipSpace::clipTriangle(Triangle triangle,
-                                         int ixyz,
-                                         int planeSign)
+vector<Triangle> ClipSpace::clip(const Triangle& triangle,
+                                 int ixyz,
+                                 int planeSign)
 {
   vector<Triangle> triangles;
 
@@ -25,7 +25,7 @@ vector<Triangle> ClipSpace::clipTriangle(Triangle triangle,
   vector<int> outsideIndices;
 
   for (int i=0; i<3; ++i) {
-    Vertex pt = triangle.vertex(i);
+    const Vertex& pt = triangle.vertex(i);
     const float xyz = pt.get(ixyz);
     const float w = pt.w();
     const bool outside = (planeSign<0 && xyz<-w) || (planeSign>0 && xyz>w);
@@ -50,9 +50,9 @@ vector<Triangle> ClipSpace::clipTriangle(Triangle triangle,
 
   // 2 points outside, create a smaller triangle
   else if (2==outsidePoints.size() && 1==insidePoints.size()) {
-    Vertex a = insidePoints[0];
-    Vertex b = outsidePoints[0];
-    Vertex c = outsidePoints[1];
+    Vertex& a = insidePoints[0];
+    Vertex& b = outsidePoints[0];
+    Vertex& c = outsidePoints[1];
     int ai = insideIndices[0];
     int bi = outsideIndices[0];
     float bt = ClipSpace::findLerpFactor(b, a, ixyz, planeSign);
@@ -73,9 +73,9 @@ vector<Triangle> ClipSpace::clipTriangle(Triangle triangle,
 
   // 1 point outside, create 2 smaller triangles
   else if (1==outsidePoints.size() && 2==insidePoints.size()) {
-    Vertex a = insidePoints[0];
-    Vertex b = outsidePoints[0];
-    Vertex c = insidePoints[1];
+    Vertex& a = insidePoints[0];
+    Vertex& b = outsidePoints[0];
+    Vertex& c = insidePoints[1];
     int ai = insideIndices[0];
     int bi = outsideIndices[0];
     float abt = ClipSpace::findLerpFactor(b, a, ixyz, planeSign);
@@ -100,28 +100,27 @@ vector<Triangle> ClipSpace::clipTriangle(Triangle triangle,
 }
 
 
-vector<Triangle> ClipSpace::clipTrianglesByPlane(vector<Triangle> triangles,
-                                                 int ixyz,
-                                                 int planeSign)
+vector<Triangle> ClipSpace::clip(const vector<Triangle>& triangles,
+                                 int ixyz,
+                                 int planeSign)
 {
   vector<Triangle> triangles2;
+  std::vector<Triangle> tmp;
   for (size_t i=0; i<triangles.size(); ++i) {
-    std::vector<Triangle> tmp = ClipSpace::clipTriangle(triangles[i], ixyz, planeSign);
-//    triangles2.insert( triangles2.end(), tmp.begin(), tmp.end() );
-    for (size_t j=0; j<tmp.size(); ++j) {
-      triangles2.push_back(tmp[j]);
-    }
+    tmp = ClipSpace::clip(triangles[i], ixyz, planeSign);
+    triangles2.insert( triangles2.end(), tmp.begin(), tmp.end() );
   }
   return triangles2;
 }
 
-vector<Triangle> ClipSpace::clipTrianglesByAllPlanes(vector<Triangle> triangles)
+vector<Triangle> ClipSpace::clipByAllPlanes(const vector<Triangle>& triangles)
 {
-  triangles = ClipSpace::clipTrianglesByPlane(triangles, 2, -1); // near
-  triangles = ClipSpace::clipTrianglesByPlane(triangles, 2, 1);  // far
-  triangles = ClipSpace::clipTrianglesByPlane(triangles, 0, 1);  // right
-  triangles = ClipSpace::clipTrianglesByPlane(triangles, 0, -1); // left
-  triangles = ClipSpace::clipTrianglesByPlane(triangles, 1, 1);  // top
-  triangles = ClipSpace::clipTrianglesByPlane(triangles, 1, -1); // bottom
-  return triangles;
+  vector<Triangle> r;
+  r = ClipSpace::clip(triangles, 2, -1); // near
+  r = ClipSpace::clip(r, 2, 1);  // far
+  r = ClipSpace::clip(r, 0, 1);  // right
+  r = ClipSpace::clip(r, 0, -1); // left
+  r = ClipSpace::clip(r, 1, 1);  // top
+  r = ClipSpace::clip(r, 1, -1); // bottom
+  return r;
 }

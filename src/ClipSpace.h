@@ -13,17 +13,18 @@ public:
                               int ixyz,
                               int planeSign);
 
-  static std::vector<Triangle> clipTriangle(Triangle triangle,
-                                            int ixyz,
-                                            int planeSign);
-                                            
-  static std::vector<Triangle> 
-  clipTrianglesByPlane(std::vector<Triangle> triangles,
-                       int ixyz, 
-                       int planeSign);
+  static std::vector<Triangle> clip(const Triangle& triangle,
+                                    int ixyz,
+                                    int planeSign);
+
+  static std::vector<Triangle>
+  clip(const std::vector<Triangle>& triangles, int ixyz, int planeSign);
+
+  static std::vector<Triangle>
+  clipByNearPlane(const std::vector<Triangle>& triangles);
 
   static std::vector<Triangle> 
-  clipTrianglesByAllPlanes(std::vector<Triangle> triangles);
+  clipByAllPlanes(const std::vector<Triangle>& triangles);
 
 }; // class ClipSpace
 } // namespace al

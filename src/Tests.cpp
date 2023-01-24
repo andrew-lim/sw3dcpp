@@ -45,9 +45,9 @@ void testVertex()
   
   // a = a + (b-a)*t
   
-  Vertex va(Vector4f(0, 1, 0), Vector4f(0,0));
-  Vertex vb(Vector4f(0, 0, 0), Vector4f(0,1));
-  Vertex vc(Vector4f(1, 1, 0), Vector4f(1,1));
+  Vertex va(Vector4f(0, 1, 0), Vector2f(0,0));
+  Vertex vb(Vector4f(0, 0, 0), Vector2f(0,1));
+  Vertex vc(Vector4f(1, 1, 0), Vector2f(1,1));
   
   printf("va.pos = %s\n", va.pos().toString().c_str());
   printf("vb.pos = %s\n", vb.pos().toString().c_str());
@@ -57,7 +57,7 @@ void testVertex()
   printf("lerpab.texcoords()=%s\n", lerpab.texcoords().toString().c_str());
   
   Vector4f correctPos(0, 0.5, 0);
-  Vector4f correctTex(0, 0.5);
+  Vector2f correctTex(0, 0.5);
   
   if (correctPos!=lerpab.pos()) {
     throw std::runtime_error("correctPos!=lerpab.pos()");

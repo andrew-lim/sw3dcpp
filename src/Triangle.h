@@ -28,11 +28,16 @@ public:
     return _vertices[i];
   }
 
-  Vector4f& texcoord(int i)
+  const Vertex& vertex(int i) const
+  {
+    return _vertices[i];
+  }
+
+  Vector2f& texcoord(int i)
   {
     return _vertices[i].texcoords();
   }
-  
+
   std::uint32_t& color()
   {
     return _color;

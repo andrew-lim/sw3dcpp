@@ -57,7 +57,7 @@ public:
   {
     return Vertex(
       Vector4f(_x, _y, _z, _w),
-      Vector4f(_u, _v)
+      Vector2f(_u, _v)
     );
   }
   

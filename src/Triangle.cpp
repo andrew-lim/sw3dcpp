@@ -29,9 +29,9 @@ void Triangle::setTexUVs(float u1, float v1,
                          float u2, float v2, 
                          float u3, float v3)
 {
-  _vertices[0].texcoords() = Vector4f(u1, v1);
-  _vertices[1].texcoords() = Vector4f(u2, v2);
-  _vertices[2].texcoords() = Vector4f(u3, v3);
+  _vertices[0].texcoords() = Vector2f(u1, v1);
+  _vertices[1].texcoords() = Vector2f(u2, v2);
+  _vertices[2].texcoords() = Vector2f(u3, v3);
 }
 
 void Triangle::rotateX(float rad)

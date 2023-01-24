@@ -670,7 +670,8 @@ void GameImpl::drawWorld(HDC hdc)
     trianglesToClip.push_back(triangleToClip);
 
     // Clip the triangle to the frustrum volume
-    vector<Triangle> clippedTriangles = ClipSpace::clipTrianglesByAllPlanes(trianglesToClip);
+    vector<Triangle> clippedTriangles = 
+    ClipSpace::clipByAllPlanes(trianglesToClip);
 
     for (size_t i=0; i<clippedTriangles.size(); ++i) {
       Triangle triangle = clippedTriangles[i];

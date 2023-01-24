@@ -1,5 +1,5 @@
-#ifndef ANDREW_LIM_VECTORS
-#define ANDREW_LIM_VECTORS
+#ifndef ANDREW_LIM_GRAPHICS_VECTOR4F_H
+#define ANDREW_LIM_GRAPHICS_VECTOR4F_H
 
 #include <cmath>
 #include <cstdint>
@@ -37,7 +37,7 @@ public:
   
   float* getArray()
   {
-    return this->parts;
+    return parts;
   }
 
   static Vector4f zero()
@@ -82,67 +82,73 @@ public:
 
   Vector4f add(Vector4f r) const
   {
-    return Vector4f(this->x() + r.x(), this->y() + r.y(), this->z() + r.z(), this->w() + r.w());
+    return Vector4f(x() + r.x(), y() + r.y(), z() + r.z(), w() + r.w());
   }
   
   Vector4f add(float r) const
   {
-    return Vector4f(this->x() + r, this->y() + r, this->z() + r, this->w() + r);
+    return Vector4f(x() + r, y() + r, z() + r, w() + r);
   }
 
   Vector4f sub(Vector4f r) const
   {
-      return Vector4f(this->x() - r.x(), this->y() - r.y(), this->z() - r.z(), this->w() - r.w());
+      return Vector4f(x() - r.x(), y() - r.y(), z() - r.z(), w() - r.w());
   }
   
   Vector4f sub(float r) const
   {
-    return Vector4f(this->x() - r, this->y() - r, this->z() - r, this->w() - r);
+    return Vector4f(x() - r, y() - r, z() - r, w() - r);
   }
 
   Vector4f mul(Vector4f r) const
   {
-      return Vector4f(this->x() * r.x(), this->y() * r.y(), this->z() * r.z(), this->w() * r.w());
+      return Vector4f(x() * r.x(), y() * r.y(), z() * r.z(), w() * r.w());
   }
   
   Vector4f mul(float r) const
   {
-    return Vector4f(this->x() * r, this->y() * r, this->z() * r, this->w() * r);
+    return Vector4f(x() * r, y() * r, z() * r, w() * r);
   }
 
   Vector4f div(Vector4f r) const
   {
-      return Vector4f(this->x() / r.x(), this->y() / r.y(), this->z() / r.z(), this->w() / r.w());
+      return Vector4f(x() / r.x(), y() / r.y(), z() / r.z(), w() / r.w());
   }
   
   Vector4f div(float r) const
   {
-    return Vector4f(this->x() / r, this->y() / r, this->z() / r, this->w() / r);
+    return Vector4f(x() / r, y() / r, z() / r, w() / r);
   }
 
   Vector4f abs() const
   {
-    return Vector4f(std::abs(this->x()), std::abs(this->y()), std::abs(this->z()), std::abs(this->w()));
+    return Vector4f(std::abs(x()), std::abs(y()), std::abs(z()), std::abs(w()));
   }
   
   bool equals(const Vector4f& r) const
   {
-    return this->x()==r.x() && this->y()==r.y() && this->z()==r.z() && this->w()==r.w();
+    return x()==r.x() && y()==r.y() && z()==r.z() && w()==r.w();
   }
   
   bool operator==(const Vector4f& r) const
   {
-    return this->equals(r);
+    return equals(r);
   }
   
   bool operator!=(const Vector4f& r) const
   {
-    return !this->equals(r);
+    return !equals(r);
   }
 
   Vector4f lerp(const Vector4f& dest, float lerpFactor) const
   {
-    return dest.sub(*this).mul(lerpFactor).add(*this);
+    return Vector4f(
+      x()+(dest.x()-x())*lerpFactor,
+      y()+(dest.y()-y())*lerpFactor,
+      z()+(dest.z()-z())*lerpFactor,
+      w()+(dest.w()-w())*lerpFactor
+    );
+//    return dest.sub(*this).mul(lerpFactor).add(*this);
   }
   
   std::string toString()
