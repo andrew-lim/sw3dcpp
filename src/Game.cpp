@@ -863,6 +863,22 @@ void GameImpl::updateGame()
   _camera.x = newX;
   _camera.y = newY;
   _camera.z = newZ;
+
+  // Vertical Look
+  const float MAX_LOOK_UP = deg2rad(55);
+  const float MAX_LOOK_DOWN = deg2rad(-55);
+  if (lookup) {
+    _camera.vrot += _camera.rotSpeed * timeBasedFactor;
+    if (_camera.vrot > MAX_LOOK_UP) {
+      _camera.vrot = MAX_LOOK_UP;
+    }
+  }
+  else if (lookdown) {
+    _camera.vrot -= _camera.rotSpeed * timeBasedFactor;
+    if (_camera.vrot < MAX_LOOK_DOWN) {
+      _camera.vrot = MAX_LOOK_DOWN;
+    }
+  }
 }
 
 void GameImpl::drawFPS(HDC hdc)
@@ -905,8 +921,8 @@ void GameImpl::drawWorld(HDC hdc)
     glm::mat4 translate = glm::translate(glm::mat4(1), moveVector);
     glm::mat4 proj = glm::perspective(fovyrad, _clientWidth/(float)_clientHeight, znear, zfar);
     glm::mat4 rotateY = glm::rotate(glm::mat4(1), _camera.rot, glm::vec3(0.0f, -1.0f, 0.0f));
-//    glm::mat4 rotateX = glm::rotate(glm::mat4(1), _camera.vrot, glm::vec3(0.0f, 1.0f, 0.0f));
-    glm::mat4 viewProj = proj * rotateY * translate;
+    glm::mat4 rotateX = glm::rotate(glm::mat4(1), _camera.vrot, glm::vec3(-1.0f, 0.0f, 0.0f));
+    glm::mat4 viewProj = proj * rotateX * rotateY * translate;
 
     Vertex* vertices = t->getVertices();
     glm::vec4 v1 = vertices[0].pos().vec4();
@@ -1001,12 +1017,6 @@ void GameImpl::drawWorld(HDC hdc)
           float x1 = win1[0], y1 = win1[1];
           float x2 = win2[0], y2 = win2[1];
           float x3 = win3[0], y3 = win3[1];
-           bool roundingOn = false;
-           if (roundingOn) {
-             x1 = round(x1), y1 = round(y1);
-             x2 = round(x2), y2 = round(y2);
-             x3 = round(x3), y3 = round(y3);
-           }
 //          textureData->blit(screenImageData, 100, 100, 0, 0, 100, 100);
            Graphics2D::texturedTriangle(screenImageData,
                                       x1, y1, triangle.getW(0), triangle.getTexU(0), triangle.getTexV(0),

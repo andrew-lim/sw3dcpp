@@ -5,7 +5,7 @@ using namespace al::graphics;
 
 inline static int clipLeft(float x)
 {
-  int newx = (int)(x + 0.5);
+  int newx = (int)(x + 0.5f);
   if (newx < 0) {
     newx = 0;
   }
@@ -14,11 +14,29 @@ inline static int clipLeft(float x)
 
 inline static int clipRight(float x, int viewWidth)
 {
-  int newx = (int)(x + 0.5);
+  int newx = (int)(x + 0.5f);
   if (newx >= viewWidth) {
     newx = viewWidth - 1;
   }
   return newx;
+}
+
+inline static int clipTop(float y)
+{
+  int newy = (int)(y + 0.5f);
+  if (newy < 0) {
+    newy = 0;
+  }
+  return newy;
+}
+
+inline static int clipBottom(float y, float viewHeight)
+{
+  int newy = (int)(y + 0.5f);
+  if (newy >= viewHeight) {
+    newy = viewHeight - 1;
+  }
+  return newy;
 }
 
 // Gets the pixel from an ImageData bitmap by converting UV coordinates
@@ -200,7 +218,7 @@ void Graphics2D::affineTriangle(ImageData& imageData,
   const float dymidbot = bot.y() - mid.y();  // Mid to Bottom
 
   // Check if triangle has 0 height
-  if (dytopbot == 0.0) {
+  if (dytopbot == 0.0f) {
     return;
   }
 
@@ -375,7 +393,7 @@ texturedTriangle(ImageData& imageData,
   const float dymidbot = bot.y() - mid.y();  // Mid to Bottom
 
   // Check if triangle has 0 height
-  if (dytopbot == 0.0) {
+  if (dytopbot == 0.0f) {
     return;
   }
 
@@ -421,12 +439,12 @@ texturedTriangle(ImageData& imageData,
       (mid2.v() - top.v()) / std::abs(dytopmid)
     ));
 
-    int ystart = top.y();
-    int yend   = mid.y();
-    if (ystart<0) ystart = 0;
-    if (yend>=(int)imageData.height()) yend = imageData.height()-1;
+    int ystart = clipTop(top.y());
+    int yend   = clipBottom(mid.y(), imageData.height());
+//    if (ystart<0) ystart = 0;
+//    if (yend>=(int)imageData.height()) yend = imageData.height()-1;
     for (int y=ystart; y<=yend; y++) {
-      const int ysteps = y-top.y();
+      const int ysteps = y - (top.y()+0.5f);
 
       // Left Point
       const Vertex left(Vertex::xywuv(
@@ -447,8 +465,8 @@ texturedTriangle(ImageData& imageData,
       ));
 
       // Draw the horizontal line between left and right
-      const int dx = right.x()-left.x();
-      if (dx != 0) {
+      float dx = right.x()-left.x();
+      if (dx != 0.0f) {
         const float ustep = (right.u()-left.u()) / dx;
         const float vstep = (right.v()-left.v()) / dx;
         const float wstep = (right.w()-left.w()) / dx;
@@ -496,12 +514,12 @@ texturedTriangle(ImageData& imageData,
       (bot.v() - mid2.v()) / std::abs(dymidbot)
     ));
 
-    int ystart = mid.y();
-    int yend   = bot.y();
-    if (ystart<0) ystart = 0;
-    if (yend>=(int) imageData.height()) yend = imageData.height()-1;
+    int ystart = clipTop(mid.y());
+    int yend   = clipBottom(bot.y(), imageData.height());
+//    if (ystart<0) ystart = 0;
+//    if (yend>=(int) imageData.height()) yend = imageData.height()-1;
     for (int y=ystart; y<=yend; y++) {
-      const int ysteps  = y - mid.y();
+      const int ysteps  = y - (mid.y()+0.5f);
 
       // Left Point
       const Vertex left(Vertex::xywuv(
@@ -522,8 +540,8 @@ texturedTriangle(ImageData& imageData,
       ));
 
       // Draw the horizontal line between left and right
-      const int dx = right.x()-left.x();
-      if (dx != 0) {
+      float dx = right.x()-left.x();
+      if (dx != 0.0f) {
         const float ustep = (right.u()-left.u()) / dx;
         const float vstep = (right.v()-left.v()) / dx;
         const float wstep = (right.w()-left.w()) / dx;
