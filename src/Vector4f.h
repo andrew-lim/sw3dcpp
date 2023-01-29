@@ -110,6 +110,11 @@ public:
     return Vector4f(x() * r, y() * r, z() * r, w() * r);
   }
 
+  Vector4f mul(float scaleX, float scaleY, float scaleZ, float scaleW=1)
+  {
+    return Vector4f(x() * scaleX, y() * scaleY, z() * scaleZ, w() * scaleW);
+  }
+
   Vector4f div(Vector4f r) const
   {
       return Vector4f(x() / r.x(), y() / r.y(), z() / r.z(), w() / r.w());

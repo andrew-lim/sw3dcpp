@@ -2,12 +2,14 @@
 #define ANDREW_LIM_GRAPHICS2D_H
 
 #include "ImageData.h"
+#include "Grid.h"
 
 namespace al { namespace graphics {
   
 class Graphics2D
 {
 public:
+  static float clampUV(float val);
   static u32& pixelAtUV(ImageData& imageData, float u, float v);
   
     /**
@@ -34,12 +36,12 @@ public:
   static void bline(ImageData& imageData, 
                     int x0, int y0, int x1, int y1, u32 rgba=0);
 
-  static void triangleWire(ImageData& imageData, 
+  static void triangleWire(ImageData& imageData,
                            int x1, int y1, int x2, int y2, int x3, int y3, 
                            u32 rgba);
                            
   static void fillTriangle(ImageData& imageData, 
-                           int x1, int y1, int x2, int y2, int x3, int y3, 
+                           int x1, int y1, int x2, int y2, int x3, int y3,
                            u32 rgba);
   
   static void affineTriangle(ImageData& imageData, 
@@ -49,10 +51,13 @@ public:
                              ImageData& textureImageData);                      
 
   static void texturedTriangle(ImageData& imageData, 
-                               int x1, int y1, float w1, float u1, float v1,
-                               int x2, int y2, float w2, float u2, float v2,
-                               int x3, int y3, float w3, float u3, float v3, 
-                               ImageData& textureImageData);
+                               float x1, float y1, float w1, float u1, float v1,
+                               float x2, float y2, float w2, float u2, float v2,
+                               float x3, float y3, float w3, float u3, float v3,
+                               ImageData& textureImageData,
+                               Grid<float>* zbuffer=0);
+
+
 };
 
 }}

@@ -11,6 +11,7 @@ private:
   Vertex _vertices[3];
   std::uint32_t _color;
 public:
+  int textureID; // -1 if not set
   Triangle();
   Triangle(const Vertex& a, const Vertex& b, const Vertex& c);
   Triangle(float x1, float y1, float z1, 
@@ -62,7 +63,9 @@ public:
   
   void rotateX(float rad);
   void rotateY(float rad);
-  
+
+  void scale(float f);
+
 }; // class Triangle
 } // namespace al
 } // namespace graphics

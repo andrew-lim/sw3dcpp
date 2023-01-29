@@ -34,7 +34,7 @@ public:
   Vertex(float x, float y=0, float z=0, float w=1)
   : _pos(x, y, z, w)
   {
-    
+
   }
   
   Vertex(const Vector4f& pos=Vector4f::zero(), 
@@ -129,6 +129,14 @@ public:
     const Vector4f& newPos = _pos.lerp(other._pos, lerpFactor);
     const Vector2f& newTex = _texcoords.lerp(other._texcoords, lerpFactor);
     return Vertex(newPos, newTex);
+  }
+
+  Vertex scaleXYZ(float f)
+  {
+    return Vertex(
+      _pos.mul(f, f, f, 1),
+      _texcoords
+    );
   }
   
 }; // class Vector4f

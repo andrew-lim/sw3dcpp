@@ -57,7 +57,7 @@ public:
   {
     this->pixel(x,y) = pixel;
   }
-  
+
   static u32 makePixel(u8 c1, u8 c2, u8 c3, u8 c4=0)
   {
     const u8 bytes[BYTES_PER_PIXEL] = {c1, c2, c3, c4};
@@ -83,6 +83,8 @@ public:
 
   void blit(ImageData& dst, u32 dstX, u32 dstY,
             u32 srcX=0, u32 srcY=0, u32 srcW=0, u32 srcH=0);
+
+  void swapEndianess();
                    
 }; // class ImageData
 } // namespace al

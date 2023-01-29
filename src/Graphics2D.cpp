@@ -1,17 +1,58 @@
 #include "Graphics2D.h"
 #include <cmath>
-#include <tuple>
-#include "VertexBuilder.h"
+#include "Vertex.h"
 using namespace al::graphics;
 
+inline static int clipLeft(float x)
+{
+  int newx = (int)(x + 0.5);
+  if (newx < 0) {
+    newx = 0;
+  }
+  return newx;
+}
+
+inline static int clipRight(float x, int viewWidth)
+{
+  int newx = (int)(x + 0.5);
+  if (newx >= viewWidth) {
+    newx = viewWidth - 1;
+  }
+  return newx;
+}
+
+// Gets the pixel from an ImageData bitmap by converting UV coordinates
+// to bitmap coordinates
 u32& Graphics2D::pixelAtUV(ImageData& imageData, float u, float v)
 {
-  u32 x = std::min((u32)(u*imageData.width()), imageData.width()-1);
-  u32 y = std::min((u32)(v*imageData.height()), imageData.height()-1);
+  // UV coordinates start from the bottom-left of a texture
+  // But ImageData coordinates start from the top-left
+  // https://stackoverflow.com/a/33324409/1645045
+  v = 1.0f-v;
+
+  const int imageW = (int) imageData.width();
+  const int imageH = (int) imageData.height();
+
+  int x = (u*imageW);
+  int y = (v*imageH);
+
+  // Wrap out of bounds coordinates
+  x = x % imageW;
+  y = y % imageH;
+
+  // Wrap negative coordinates
+  if (x<0) {
+    x = imageW - std::abs(x);
+  }
+  if (y<0) {
+    y = imageH - std::abs(y);
+  }
+
   return imageData.pixel(x,y);
 }
 
-void Graphics2D::bline(ImageData& imageData, 
+
+void Graphics2D::bline(ImageData& imageData,
                        int x0, int y0, int x1, int y1, u32 rgba)
 {
   int dx = std::abs((int)(x1 - x0));
@@ -20,7 +61,7 @@ void Graphics2D::bline(ImageData& imageData,
   int sy = (y0 < y1) ? 1 : -1;
   int err = dx - dy;
   while(true) {
-    if (x0>=0 && y0>=0 && 
+    if (x0>=0 && y0>=0 &&
         x0<(int)imageData.width() && y0<(int)imageData.height()) {
       imageData.pixel(x0, y0) = rgba;
     }
@@ -32,8 +73,8 @@ void Graphics2D::bline(ImageData& imageData,
   }
 }
 
-void Graphics2D::triangleWire(ImageData& imageData, 
-                              int x1, int y1, int x2, int y2, int x3, int y3, 
+void Graphics2D::triangleWire(ImageData& imageData,
+                              int x1, int y1, int x2, int y2, int x3, int y3,
                               u32 rgba)
 {
   Graphics2D::bline(imageData, x1, y1, x2, y2, rgba);
@@ -41,9 +82,8 @@ void Graphics2D::triangleWire(ImageData& imageData,
   Graphics2D::bline(imageData, x3, y3, x1, y1, rgba);
 }
 
-
-void Graphics2D::fillTriangle(ImageData& imageData, 
-                              int x1, int y1, int x2, int y2, int x3, int y3, 
+void Graphics2D::fillTriangle(ImageData& imageData,
+                              int x1, int y1, int x2, int y2, int x3, int y3,
                               u32 rgba)
 {
   Vertex top(x1, y1);
@@ -134,10 +174,10 @@ void Graphics2D::fillTriangle(ImageData& imageData,
   }
 }
 
-void Graphics2D::affineTriangle(ImageData& imageData, 
+void Graphics2D::affineTriangle(ImageData& imageData,
                                 int x1, int y1, float u1, float v1,
                                 int x2, int y2, float u2, float v2,
-                                int x3, int y3, float u3, float v3, 
+                                int x3, int y3, float u3, float v3,
                                 ImageData& textureImageData)
  {
   Vertex top(Vertex::xyuv(x1, y1, u1, v1));
@@ -194,7 +234,7 @@ void Graphics2D::affineTriangle(ImageData& imageData,
       (mid.u() - top.u()) / std::abs(dytopmid),
       (mid.v() - top.v()) / std::abs(dytopmid)
     ));
-      
+
     const Vertex rightStep(Vertex::xyuv(
       (mid2.x() - top.x()) / std::abs(dytopmid),
       0,
@@ -249,7 +289,7 @@ void Graphics2D::affineTriangle(ImageData& imageData,
       (bot.u() - mid.u()) / std::abs(dymidbot),
       (bot.v() - mid.v()) / std::abs(dymidbot)
     ));
-      
+
     const Vertex rightStep(Vertex::xyuv(
       (bot.x() - mid2.x()) / std::abs(dymidbot),
       0,
@@ -296,11 +336,13 @@ void Graphics2D::affineTriangle(ImageData& imageData,
   }
 } // affineTriangle
 
-void Graphics2D::texturedTriangle(ImageData& imageData, 
-                                  int x1, int y1, float w1, float u1, float v1,
-                                  int x2, int y2, float w2, float u2, float v2,
-                                  int x3, int y3, float w3, float u3, float v3, 
-                                  ImageData& textureImageData)
+void Graphics2D::
+texturedTriangle(ImageData& imageData,
+                 float x1, float y1, float w1, float u1, float v1,
+                 float x2, float y2, float w2, float u2, float v2,
+                 float x3, float y3, float w3, float u3, float v3,
+                 ImageData& textureImageData,
+                 Grid<float>* zbuffer)
 {
   // Texture mapping perspective correction using w
   u1 = u1 / w1;
@@ -312,7 +354,7 @@ void Graphics2D::texturedTriangle(ImageData& imageData,
   w1 = 1.0 / w1;
   w2 = 1.0 / w2;
   w3 = 1.0 / w3;
-  
+
   Vertex top(Vertex::xywuv(x1, y1, w1, u1, v1));
   Vertex mid(Vertex::xywuv(x2, y2, w2, u2, v2));
   Vertex bot(Vertex::xywuv(x3, y3, w3, u3, v3));
@@ -370,7 +412,7 @@ void Graphics2D::texturedTriangle(ImageData& imageData,
       (mid.u() - top.u()) / std::abs(dytopmid),
       (mid.v() - top.v()) / std::abs(dytopmid)
     ));
-      
+
     const Vertex rightStep(Vertex::xywuv(
       (mid2.x() - top.x()) / std::abs(dytopmid),
       0,
@@ -379,8 +421,10 @@ void Graphics2D::texturedTriangle(ImageData& imageData,
       (mid2.v() - top.v()) / std::abs(dytopmid)
     ));
 
-    const int ystart = std::max(0, (int)top.y());
-    const int yend = std::min((int)imageData.height()-1, (int)mid.y());
+    int ystart = top.y();
+    int yend   = mid.y();
+    if (ystart<0) ystart = 0;
+    if (yend>=(int)imageData.height()) yend = imageData.height()-1;
     for (int y=ystart; y<=yend; y++) {
       const int ysteps = y-top.y();
 
@@ -408,9 +452,9 @@ void Graphics2D::texturedTriangle(ImageData& imageData,
         const float ustep = (right.u()-left.u()) / dx;
         const float vstep = (right.v()-left.v()) / dx;
         const float wstep = (right.w()-left.w()) / dx;
-        const int xstart = std::max(0, (int)left.x());
-        const int xend = std::min((int)right.x(), (int)imageData.width());
-        for (int x=xstart; x<xend; x++) {
+        const int xstart = clipLeft(left.x());
+        const int xend   = clipRight(right.x(), (int)imageData.width());
+        for (int x=xstart; x<=xend; x++) {
           const int xsteps = x-left.x();
           const float u = left.u() + xsteps * ustep;
           const float v = left.v() + xsteps * vstep;
@@ -418,8 +462,17 @@ void Graphics2D::texturedTriangle(ImageData& imageData,
           const float z = 1/w;
           const float texu = u * z;
           const float texv = v * z;
-          const uint32_t pixel = Graphics2D::pixelAtUV(textureImageData, texu, texv);
-          imageData.pixel(x, y) = pixel;
+          if (zbuffer) {
+            const int oldz = zbuffer->get(x, y);
+            if (oldz==0 || z<oldz) {
+              zbuffer->set(x, y, z);
+            }
+            else {
+              continue;
+            }
+          }
+          imageData.pixel(x, y) = Graphics2D::pixelAtUV(textureImageData,
+                                                        texu, texv);
         }
       }
     }
@@ -434,7 +487,7 @@ void Graphics2D::texturedTriangle(ImageData& imageData,
       (bot.u() - mid.u()) / std::abs(dymidbot),
       (bot.v() - mid.v()) / std::abs(dymidbot)
     ));
-      
+
     const Vertex rightStep(Vertex::xywuv(
       (bot.x() - mid2.x()) / std::abs(dymidbot),
       0,
@@ -442,8 +495,11 @@ void Graphics2D::texturedTriangle(ImageData& imageData,
       (bot.u() - mid2.u()) / std::abs(dymidbot),
       (bot.v() - mid2.v()) / std::abs(dymidbot)
     ));
-    const int ystart = std::max(0, (int)mid.y());
-    const int yend = std::min((int)imageData.height()-1, (int)bot.y());
+
+    int ystart = mid.y();
+    int yend   = bot.y();
+    if (ystart<0) ystart = 0;
+    if (yend>=(int) imageData.height()) yend = imageData.height()-1;
     for (int y=ystart; y<=yend; y++) {
       const int ysteps  = y - mid.y();
 
@@ -471,9 +527,9 @@ void Graphics2D::texturedTriangle(ImageData& imageData,
         const float ustep = (right.u()-left.u()) / dx;
         const float vstep = (right.v()-left.v()) / dx;
         const float wstep = (right.w()-left.w()) / dx;
-        const int xstart = std::max(0, (int)left.x());
-        const int xend = std::min((int)right.x(), (int)imageData.width());
-        for (int x=xstart; x<xend; x++) {
+        const int xstart = clipLeft(left.x());
+        const int xend   = clipRight(right.x(), (int)imageData.width());
+        for (int x=xstart; x<=xend; x++) {
           const int xsteps = x-left.x();
           const float u = left.u() + xsteps * ustep;
           const float v = left.v() + xsteps * vstep;
@@ -481,8 +537,17 @@ void Graphics2D::texturedTriangle(ImageData& imageData,
           const float z = 1/w;
           const float texu = u * z;
           const float texv = v * z;
-          const uint32_t pixel = Graphics2D::pixelAtUV(textureImageData, texu, texv);
-          imageData.pixel(x, y) = pixel;
+          if (zbuffer) {
+            const int oldz = zbuffer->get(x, y);
+            if (oldz==0 || z<oldz) {
+              zbuffer->set(x, y, z);
+            }
+            else {
+              continue;
+            }
+          }
+          imageData.pixel(x, y) = Graphics2D::pixelAtUV(textureImageData,
+                                                        texu, texv);
         }
       }
     }

@@ -113,6 +113,11 @@ vector<Triangle> ClipSpace::clip(const vector<Triangle>& triangles,
   return triangles2;
 }
 
+vector<Triangle> ClipSpace::clipByNearPlane(const vector<Triangle>& triangles)
+{
+  return ClipSpace::clip(triangles, 2, -1); // near
+}
+
 vector<Triangle> ClipSpace::clipByAllPlanes(const vector<Triangle>& triangles)
 {
   vector<Triangle> r;

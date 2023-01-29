@@ -85,7 +85,7 @@ void ImageData::fill(u32 pixel)
 {
   u32* data32 = (u32*)_data;
   for (u32 i=0; i<_w*_h; ++i) {
-    data32[i] = pixel; 
+    data32[i] = pixel;
   }
 }
 
@@ -99,9 +99,19 @@ void ImageData::blit(ImageData& dst, u32 dstX, u32 dstY,
   if (srcH==0) {
     srcH = src.height();
   }
-  for (u32 x=0; x<srcW; ++x) {
-    for (u32 y=0; y<srcH; ++y) {
+  for (u32 x=0; x>=0 && x<srcW &&  x<dst.width(); ++x) {
+    for (u32 y=0; y>=0 && y<srcH && y<dst.height(); ++y) {
       dst.pixel(dstX+x, dstY+y) = src.pixel(srcX+x, srcY+y);
     }
+  }
+}
+
+void ImageData::swapEndianess()
+{
+  u32* data32 = (u32*)_data;
+  for (u32 i=0; i<_w*_h; ++i) {
+    u8* bytes = (u8*)(&data32[i]);
+    u32 newPixel = makePixel(bytes[2], bytes[1], bytes[0], bytes[3]);
+    data32[i] = newPixel;
   }
 }

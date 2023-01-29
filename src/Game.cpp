@@ -26,13 +26,18 @@
 #include "Menu.h"
 #include "Tests.h"
 #include "ClipSpace.h"
+#include "OBJLoader.h"
+#include "FileDialog.h"
+#include "lodepng.h"
+#include "Camera.h"
 using namespace std ;
 using namespace al::graphics;
 using namespace glm;
 
-#define CLIENT_WIDTH 640
-#define CLIENT_HEIGHT 360
+#define CLIENT_WIDTH 848
+#define CLIENT_HEIGHT 480
 #define MOVE_SPEED 4
+#define ROT_SPEED (deg2rad(2))
 #define WM_MM_TIMER WM_USER + 1    //  Custom message sent by the timer.
 const int DESIRED_FPS = 60;
 const int UPDATE_INTERVAL = 1000/DESIRED_FPS;
@@ -68,13 +73,26 @@ glm::vec4 ndcToWindow(glm::vec4 point, float windowWidth, float windowHeight)
 
   // Hack to make sure right and bottom edges are really clipped
   // to prevent drawing outside viewport
-  windowWidth = windowWidth-1;
-  windowHeight = windowHeight-1;
+//  windowWidth = windowWidth-1;
+//  windowHeight = windowHeight-1;
 
   int xWindow = (windowWidth/2*xNDC + windowWidth/2);
   int yWindow = ((-yNDC)*windowHeight/2 + windowHeight/2);
   float zWindow = zNDC;
   return glm::vec4(xWindow, yWindow, zWindow, 1);
+}
+
+uint8_t* loadPNG(const string& filename, unsigned& width, unsigned& height)
+{
+  unsigned error;
+  uint8_t* image = 0;
+  error = lodepng_decode32_file(&image, &width, &height, filename.c_str());
+  if (error) {
+    string msg = "lodepng::decode failed. Error: ";
+    msg += lodepng_error_text(error);
+    throw runtime_error(msg);
+  }
+  return image;
 }
 
 //------------------------------------------------------------------------------
@@ -91,23 +109,49 @@ private:
   enum MenuIDs {
       MIExit = 1000
     , MIReset
+    , MIOpenOBJ
+    , MINothing
     , MISolid
     , MIAffine
     , MIPerspectiveCorrect
     , MIWireframe
+    , MIZBuffer
+    , MIBackfacCulling
+    , MIBlackBackground
+    , MIBlueBackground
     , MI640x360
     , MI640x480
     , MI800x600
+    , MI848x480
     , MI1024x768
+    , MI1280x720
     , MI1366x768
     , MI1920x1080
-    , MITexture1
+    , MIScale001
+    , MIScale01
+    , MIScale05
+    , MIScale1
+    , MIScale2
+    , MIScale4
+    , MIScale8
+    , MIScale16
+    , MIScale32
+    , MIScale64
+    , MIScale128
+    , MIScale256
+    , MIClipAll
+    , MIClipNearOnly
+    , MITexture1 = 1100
+    , MIMeshDefault = 1200
+    , MIMesh0
+    , MIMesh1
   };
   
   enum DrawType {
     DrawPerspectiveCorrect = 0,
     DrawAffine = 1,
-    DrawSolid = 2
+    DrawSolid = 2,
+    DrawNothing = 3
   };
   
   int _drawType = DrawPerspectiveCorrect;
@@ -115,9 +159,10 @@ private:
   int _textureID;
 
 private:
-  LRESULT  handleMessage( UINT, WPARAM, LPARAM );  
+  LRESULT  handleMessage( UINT, WPARAM, LPARAM );
   void     repaint() ;
-  void     createMesh();
+  void     createDefaultMesh();
+  void     createScaledMesh(vector<Triangle>&);
   void     drawFPS(HDC hdc);
   void     drawWorld(HDC hdc);
   void updateGame();
@@ -129,15 +174,18 @@ private:
   void prepareScreenImageData();
   void loadImages();
   void createMenus();
+  void showOpenOBJDialog();
   static void CALLBACK TimeProc(UINT uID, UINT uMsg, DWORD_PTR dwUser, DWORD_PTR d1, DWORD_PTR d2);
   
   BITMAPINFOHEADER _bmih;
   BITMAPINFO _dbmi;
   BufferDC          bufferDC ;
   ImageData         screenImageData;
+
   bool              _backfaceCullingOn;
+  bool              _zbufferOn;
   vector<ImageData> _textureImageDatas;
-  
+
   int _clientWidth = CLIENT_WIDTH;
   int _clientHeight = CLIENT_HEIGHT;
 
@@ -146,15 +194,20 @@ private:
   DWORD  _currentFPS, _fps, _pastFps, _past;
   static HWND hwndMain;
   std::map<int, BOOL> _keys;
-  bool _backCullingOn;
-  float _worldX = 0;
-  float _worldY = 0;
-  float _worldZ = -200;
   float _xStep = 4;
   float _yStep = 4;
   float _zStep = 4;
-  vector<Triangle*> mesh;
-  Menu _menuBar, _mainMenu, _optionsMenu, _textureMenu;
+  float _scale = 1;
+  float _oldScale = 1;
+  Grid<float> zbuffer;
+  vector<Triangle> _mesh, _defaultMesh, _loadedMesh, _scaledMesh;
+  Menu _menuBar, _mainMenu, _optionsMenu, _textureMenu, _meshMenu, _clipMenu;
+  OBJLoader _loader;
+  uint32_t _backgroundColor = 0;
+  Camera _camera;
+  static const int CLIP_NEAR_ONLY = 0;
+  static const int CLIP_ALL = 1;
+  int _clipMode = CLIP_NEAR_ONLY;
 };
 
 //------------------------------------------------------------------------------
@@ -164,9 +217,10 @@ private:
 HWND GameImpl::hwndMain;
 
 GameImpl::GameImpl()
-  : Window( TEXT("Andrew's 3D Software Engine"), NULL,
+  : Window( TEXT("Andrew Lim's' 3D Software Rasterizer"), NULL,
            WS_OVERLAPPEDWINDOW&~(WS_MAXIMIZEBOX|WS_THICKFRAME), 0 )
   , _backfaceCullingOn(true)
+  , _zbufferOn(true)
   , _xrot()
   , _yrot()
   , _currentFPS()
@@ -177,9 +231,13 @@ GameImpl::GameImpl()
   , _mainMenu( true )
   , _optionsMenu( true )
   , _textureMenu(true)
+  , _meshMenu(true)
+  , _clipMenu(true)
+  , _loader(true)
 {
   _textureID = 0;
   _drawWireframe = true;
+//  _backgroundColor=ImageData::makeLittlePixel(64, 145, 250);
   
   srand( (unsigned int)time(0) );
   printf("DESIRED_FPS=%d\n", DESIRED_FPS);
@@ -191,6 +249,7 @@ GameImpl::GameImpl()
   GameImpl::hwndMain = hwnd;
   
   Tests::run();
+  createDefaultMesh();
   loadImages();
   createMenus();
 
@@ -200,6 +259,7 @@ GameImpl::GameImpl()
   
 //  startTimer();
   resetGame();
+
 }
 
 GameImpl::~GameImpl()
@@ -243,21 +303,31 @@ void GameImpl::stopTimer() {
 void GameImpl::createMenus()
 {
   _mainMenu.add("Reset", MIReset ) ;
+  _mainMenu.add("Use Default Cube", MIMeshDefault ) ;
+  _mainMenu.add("Open OBJ...", MIOpenOBJ ) ;
   _mainMenu.addSeparator() ;
   _mainMenu.add("Exit", MIExit ) ;
   
+  _optionsMenu.add("Nothing / Wireframe Only", MINothing);
   _optionsMenu.add("Solid", MISolid);
   _optionsMenu.add("Affine", MIAffine);
   _optionsMenu.add("Perspective Correct", MIPerspectiveCorrect);
   _optionsMenu.addSeparator();
   _optionsMenu.add("Wireframe", MIWireframe);
+  _optionsMenu.add("Backface Culling", MIBackfacCulling);
+  _optionsMenu.add("Z Buffer", MIZBuffer);
   _optionsMenu.addSeparator();
   _optionsMenu.add("640x360", MI640x360);
   _optionsMenu.add("640x480", MI640x480);
   _optionsMenu.add("800x600", MI800x600);
+  _optionsMenu.add("848x480", MI848x480);
   _optionsMenu.add("1024x768", MI1024x768);
+  _optionsMenu.add("1280x720", MI1280x720);
   _optionsMenu.add("1366x768", MI1366x768);
   _optionsMenu.add("1920x1080", MI1920x1080);
+  _optionsMenu.addSeparator();
+  _optionsMenu.add("Black Background", MIBlackBackground);
+  _optionsMenu.add("Blue Background", MIBlueBackground);
   
   for (size_t i=0; i<_textureImageDatas.size(); ++i) {
     TCHAR s[128];
@@ -265,11 +335,31 @@ void GameImpl::createMenus()
     _textureMenu.add(s, MITexture1 + i);
   }
 
+  _meshMenu.add("Scale x0.01", MIScale001);
+  _meshMenu.add("Scale x0.1", MIScale01);
+  _meshMenu.add("Scale x0.5", MIScale05);
+  _meshMenu.add("Scale x1", MIScale1);
+  _meshMenu.add("Scale x2", MIScale2);
+  _meshMenu.add("Scale x4", MIScale4);
+  _meshMenu.add("Scale x8", MIScale8);
+  _meshMenu.add("Scale x16", MIScale16);
+  _meshMenu.add("Scale x32", MIScale32);
+  _meshMenu.add("Scale x64", MIScale64);
+  _meshMenu.add("Scale x128", MIScale128);
+  _meshMenu.add("Scale x256", MIScale256);
+
+  _clipMenu.add("Clip All Planes", MIClipAll);
+  _clipMenu.add("Clip Near Plane Only", MIClipNearOnly);
+
   _menuBar.add( _mainMenu, "Main" ) ;
   _menuBar.add( _optionsMenu, "Options" ) ;
   _menuBar.add( _textureMenu, "Texture" ) ;
-  _menuBar.attachToWindow( hwnd ) ;  
+  _menuBar.add( _meshMenu, "Mesh" ) ;
+  _menuBar.add( _clipMenu, "Clip");
+  _menuBar.attachToWindow( hwnd ) ;
   _optionsMenu.setMenuItemChecked( MIPerspectiveCorrect, true ) ;
+
+
 }
 
 void GameImpl::prepareScreenImageData()
@@ -299,7 +389,7 @@ void GameImpl::prepareScreenImageData()
 void GameImpl::loadImages()
 {
   vector<string> paths;
-  paths.push_back("..\\res\\texture1.bmp");
+  paths.push_back("..\\res\\texture1.png");
   paths.push_back("..\\res\\texture2.bmp");
   paths.push_back("..\\res\\texture3.bmp");
   paths.push_back("..\\res\\texture4.bmp");
@@ -308,23 +398,63 @@ void GameImpl::loadImages()
   paths.push_back("..\\res\\texture7.bmp");
   for (size_t i=0 ;i<paths.size(); ++i) {
     string path = paths[i];
-    Bitmap bmp;
     printf("Loading image %s\n", path.c_str());
-    if (!bmp.loadFile(path.c_str())) {
-      string error = "Error loading " + path;
-      throw std::runtime_error(error.c_str());
+
+    // PNG
+    if (path.find(".png") != std::string::npos) {
+      unsigned w=0, h=0;
+      uint8_t* imgbytes = loadPNG(path, w, h);
+      _textureImageDatas.push_back(
+        ImageData(imgbytes, w, h, true)
+      );
     }
-      
-    uint8_t* bmpbytes = new uint8_t[bmp.getWidth() * bmp.getHeight() * 4];
-    uint32_t result = bmp.getBits(bmpbytes);
-    if (result == 0) {
-      string error = "0 scanlines loaded from " + path;
-      throw std::runtime_error(error.c_str());
+    // BMP
+    else {
+      Bitmap bmp;
+      if (!bmp.loadFile(path.c_str())) {
+        string error = "Error loading " + path;
+        throw std::runtime_error(error.c_str());
+      }
+
+      uint8_t* bmpbytes = new uint8_t[bmp.getWidth() * bmp.getHeight() * 4];
+      uint32_t result = bmp.getBits(bmpbytes);
+      if (result == 0) {
+        string error = "0 scanlines loaded from " + path;
+        throw std::runtime_error(error.c_str());
+      }
+      _textureImageDatas.push_back(
+        ImageData(bmpbytes, bmp.getWidth(), bmp.getHeight(), true)
+      );
+      delete[] bmpbytes;
     }
-    _textureImageDatas.push_back(
-      ImageData(bmpbytes, bmp.getWidth(), bmp.getHeight(), true)
-    );
-    delete[] bmpbytes;
+
+  }
+}
+
+void GameImpl::showOpenOBJDialog()
+{
+  OpenFileDialog dialog ;
+  dialog.setFilter(TEXT((TCHAR*)"OBJ Files\0*.obj\0\0"));
+  if ( dialog.showDialog( this->hwnd ) ) {
+    try {
+      string path = dialog.getFileName();
+      vector<Triangle> mesh;
+      _loader.load(path, 1.0f);
+      if (0==_loader.triangles.size()) {
+        throw runtime_error("No triangles loaded");
+      }
+      stopTimer();
+      _loadedMesh = _loader.triangles;
+      _scale = _oldScale = 1;
+      createScaledMesh(_loadedMesh);
+      resetGame();
+    }
+    catch (exception& ex) {
+      string msg = "Error loading ";
+      msg += dialog.getFileName();
+      msg += " Exception=" + string(ex.what());
+      MessageBox( NULL, msg.c_str(), "Error", MB_OK ) ;
+    }
   }
 }
 
@@ -342,7 +472,17 @@ LRESULT GameImpl::handleMessage( UINT msg, WPARAM wParam, LPARAM lParam )
       WORD wID = LOWORD( wParam ) ;
       
       if (wID >= MITexture1) {
-        _textureID = wID - MITexture1;
+        int tmp = wID - MITexture1;
+        if (tmp>=0 && tmp<(int)_textureImageDatas.size()) {
+          _textureID = tmp;
+        }
+      }
+
+      if (wID == MIMeshDefault) {
+        _loadedMesh.clear();
+        createScaledMesh(_defaultMesh);
+        _scale = 1;
+        resetGame();
       }
       
       switch ( wID )
@@ -351,6 +491,15 @@ LRESULT GameImpl::handleMessage( UINT msg, WPARAM wParam, LPARAM lParam )
           resetGame();
           break;
         }
+
+        case MIOpenOBJ:
+          showOpenOBJDialog();
+          break;
+
+        case MINothing:
+          _drawType = DrawNothing;
+          _drawWireframe = true;
+          break;
         
         case MISolid:
           _drawType = DrawSolid;
@@ -368,12 +517,41 @@ LRESULT GameImpl::handleMessage( UINT msg, WPARAM wParam, LPARAM lParam )
           _drawWireframe = !_drawWireframe;
           break;
 
+        case MIZBuffer:
+          _zbufferOn = !_zbufferOn;
+          break;
+
+        case MIBackfacCulling:
+          _backfaceCullingOn = !_backfaceCullingOn;
+          break;
+
         case MI640x360: _clientWidth=640, _clientHeight=360; resetGame(); break;
         case MI640x480: _clientWidth=640, _clientHeight=480; resetGame(); break;
         case MI800x600: _clientWidth=800, _clientHeight=600; resetGame(); break;
+        case MI848x480: _clientWidth=848, _clientHeight=480; resetGame(); break;
         case MI1024x768: _clientWidth=1024, _clientHeight=768; resetGame(); break;
+        case MI1280x720: _clientWidth=1280, _clientHeight=720; resetGame(); break;
         case MI1366x768: _clientWidth=1366, _clientHeight=768; resetGame(); break;
         case MI1920x1080: _clientWidth=1920, _clientHeight=1080; resetGame(); break;
+
+        case MIScale001: _scale=0.01f; break;
+        case MIScale01: _scale=0.1f; break;
+        case MIScale05: _scale=0.5f; break;
+        case MIScale1: _scale=1; break;
+        case MIScale2: _scale=2; break;
+        case MIScale4: _scale=4; break;
+        case MIScale8: _scale=8; break;
+        case MIScale16: _scale=16; break;
+        case MIScale32: _scale=32; break;
+        case MIScale64: _scale=64; break;
+        case MIScale128: _scale=128; break;
+        case MIScale256: _scale=256; break;
+
+        case MIBlackBackground: _backgroundColor = 0; break;
+        case MIBlueBackground: _backgroundColor=ImageData::makeLittlePixel(64, 145, 250); break;
+
+        case MIClipAll: _clipMode = CLIP_ALL; break;
+        case MIClipNearOnly: _clipMode = CLIP_NEAR_ONLY; break;
         
         case MIExit: {
           stopTimer();
@@ -415,22 +593,42 @@ LRESULT GameImpl::handleMessage( UINT msg, WPARAM wParam, LPARAM lParam )
 
       if ( hMenu == _optionsMenu )
       {
+        _optionsMenu.setMenuItemChecked( MINothing, _drawType == DrawNothing );
         _optionsMenu.setMenuItemChecked( MISolid, _drawType == DrawSolid );
         _optionsMenu.setMenuItemChecked( MIAffine, _drawType == DrawAffine );
         _optionsMenu.setMenuItemChecked( MIPerspectiveCorrect, _drawType == DrawPerspectiveCorrect );
         _optionsMenu.setMenuItemChecked( MIWireframe, _drawWireframe );
+        _optionsMenu.setMenuItemChecked( MIZBuffer, _zbufferOn );
+        _optionsMenu.setMenuItemChecked( MIBackfacCulling, _backfaceCullingOn );
         _optionsMenu.setMenuItemChecked( MI640x360, _clientWidth==640 && _clientHeight==360 );
         _optionsMenu.setMenuItemChecked( MI640x480, _clientWidth==640 && _clientHeight==480);
         _optionsMenu.setMenuItemChecked( MI800x600, _clientWidth==800 && _clientHeight==600);
         _optionsMenu.setMenuItemChecked( MI1024x768, _clientWidth==1024 && _clientHeight==768);
       }
       else if (hMenu == _textureMenu) {
-//        _textureMenu.setMenuItemChecked( MITexture1+_textureID, true);
+        // _textureMenu.setMenuItemChecked( MITexture1+_textureID, true);
+      }
+      else if (hMenu == _meshMenu) {
+        _meshMenu.setMenuItemChecked( MIScale001, _scale==0.01f);
+        _meshMenu.setMenuItemChecked( MIScale01, _scale==0.1f);
+        _meshMenu.setMenuItemChecked( MIScale05, _scale==0.5f);
+        _meshMenu.setMenuItemChecked( MIScale1, _scale==1.0f);
+        _meshMenu.setMenuItemChecked( MIScale1, _scale==1.0f);
+        _meshMenu.setMenuItemChecked( MIScale2, _scale==2.0f);
+        _meshMenu.setMenuItemChecked( MIScale4, _scale==4.0f);
+        _meshMenu.setMenuItemChecked( MIScale8, _scale==8.0f);
+        _meshMenu.setMenuItemChecked( MIScale16, _scale==16.0f);
+        _meshMenu.setMenuItemChecked( MIScale32, _scale==32.0f);
+        _meshMenu.setMenuItemChecked( MIScale64, _scale==64.0f);
+      }
+      else if (hMenu == _clipMenu) {
+        _clipMenu.setMenuItemChecked( MIClipAll, _clipMode==CLIP_ALL);
+        _clipMenu.setMenuItemChecked( MIClipNearOnly, _clipMode==CLIP_NEAR_ONLY);
       }
       
       return 0 ; 
     }
-    
+
     case WM_PAINT:
     {
       PAINTSTRUCT ps ;
@@ -442,7 +640,7 @@ LRESULT GameImpl::handleMessage( UINT msg, WPARAM wParam, LPARAM lParam )
       EndPaint( hwnd, &ps ) ;
       return 0 ; 
     }
- 
+
     
     default: 
       return ::DefWindowProc( hwnd, msg, wParam, lParam ) ;
@@ -462,16 +660,13 @@ int GameImpl::run()
 
 void GameImpl::repaint()
 {
-  InvalidateRect( hwnd, NULL, FALSE ) ; 
+  InvalidateRect( hwnd, NULL, FALSE ) ;
 }
 
-void GameImpl::createMesh()
+void GameImpl::createDefaultMesh()
 {
-  for (size_t i=0; i<mesh.size(); ++i) {
-    delete mesh[i];
-  }
-  mesh.clear();
-  
+  _defaultMesh.clear();
+
   float leftX   = -64;
   float rightX  = 64;
   float topY    = 64;
@@ -485,63 +680,70 @@ void GameImpl::createMesh()
   uint32_t blue   = ImageData::makeLittlePixel(0, 0, 255, 255);
   uint32_t yellow = ImageData::makeLittlePixel(255, 255, 0, 255);
   uint32_t violet = ImageData::makeLittlePixel(98, 88, 124, 255);
-  
-  Triangle* t;
-  
-  // South
-  t = new Triangle(leftX, topY, frontZ, leftX, bottomY, frontZ, rightX, topY, frontZ, pink);
-  t->setTexUVs(0.0, 0.0, 0.0, 1.0, 1.0, 0.0);
-  mesh.push_back(t);
 
-  t = new Triangle(leftX, bottomY, frontZ, rightX, bottomY, frontZ, rightX, topY, frontZ, pink);
-  t->setTexUVs(0.0, 1.0, 1.0, 1.0, 1.0, 0.0);
-   mesh.push_back(t);
-  
+  Triangle t;
+
+  // South
+  t = Triangle(leftX, topY, frontZ, leftX, bottomY, frontZ, rightX, topY, frontZ, pink);
+  t.setTexUVs(0.0, 0.0, 0.0, -2.0, 2.0, -0.0);
+  _defaultMesh.push_back(t);
+
+  t = Triangle(leftX, bottomY, frontZ, rightX, bottomY, frontZ, rightX, topY, frontZ, pink);
+  t.setTexUVs(0.0, -2.0, 2.0, -2.0, 2.0, -0.0);
+  _defaultMesh.push_back(t);
+
   // East
-  t = new Triangle(rightX, topY, frontZ, rightX, bottomY, frontZ, rightX, topY, backZ, green);
-  t->setTexUVs(0.0, 0.0, 0.0, 1.0, 1.0, 0.0);
-    mesh.push_back(t);
-  t = new Triangle(rightX, bottomY, frontZ, rightX, bottomY, backZ, rightX, topY, backZ, green);
-  t->setTexUVs(0.0, 1.0, 1.0, 1.0, 1.0, 0.0);
-    mesh.push_back(t);
-  
+  t = Triangle(rightX, topY, frontZ, rightX, bottomY, frontZ, rightX, topY, backZ, green);
+  t.setTexUVs(0.0, 0.0, 0.0, -2.0, 2.0, 0.0);
+  _defaultMesh.push_back(t);
+  t = Triangle(rightX, bottomY, frontZ, rightX, bottomY, backZ, rightX, topY, backZ, green);
+  t.setTexUVs(0.0, -2.0, 2.0, -2.0, 2.0, 0.0);
+  _defaultMesh.push_back(t);
+
   // North
-  t = new Triangle(rightX, topY, backZ, rightX, bottomY, backZ, leftX, topY, backZ, blue);
-  t->setTexUVs(0.0, 0.0, 0.0, 1.0, 1.0, 0.0);
-    mesh.push_back(t);
-  t = new Triangle(rightX, bottomY, backZ, leftX, bottomY, backZ, leftX, topY, backZ, blue);
-  t->setTexUVs(0.0, 1.0, 1.0, 1.0, 1.0, 0.0);
-    mesh.push_back(t);
+  t = Triangle(rightX, topY, backZ, rightX, bottomY, backZ, leftX, topY, backZ, blue);
+  t.setTexUVs(0.0, 0.0, 0.0, -2.0, 2.0, 0.0);
+  _defaultMesh.push_back(t);
+  t = Triangle(rightX, bottomY, backZ, leftX, bottomY, backZ, leftX, topY, backZ, blue);
+  t.setTexUVs(0.0, -2.0, 2.0, -2.0, 2.0, 0.0);
+  _defaultMesh.push_back(t);
 
   // West
-  t = new Triangle(leftX, topY, backZ, leftX, bottomY, backZ, leftX, topY, frontZ, red);
-  t->setTexUVs(0.0, 0.0, 0.0, 1.0, 1.0, 0.0);
-    mesh.push_back(t);
-  t = new Triangle(leftX, bottomY, backZ, leftX, bottomY, frontZ, leftX, topY, frontZ, red);
-  t->setTexUVs(0.0, 1.0, 1.0, 1.0, 1.0, 0.0);
-    mesh.push_back(t);
+  t = Triangle(leftX, topY, backZ, leftX, bottomY, backZ, leftX, topY, frontZ, red);
+  t.setTexUVs(0.0, 0.0, 0.0, -2.0, 2.0, 0.0);
+  _defaultMesh.push_back(t);
+  t = Triangle(leftX, bottomY, backZ, leftX, bottomY, frontZ, leftX, topY, frontZ, red);
+  t.setTexUVs(0.0, -2.0, 2.0, -2.0, 2.0, 0.0);
+  _defaultMesh.push_back(t);
 
   // Top
-  t = new Triangle(leftX, topY, backZ, leftX, topY, frontZ, rightX, topY, backZ, yellow);
-  t->setTexUVs(0.0, 0.0, 0.0, 1.0, 1.0, 0.0);
-    mesh.push_back(t);
-  t = new Triangle(leftX, topY, frontZ, rightX, topY, frontZ, rightX, topY, backZ, yellow);
-  t->setTexUVs(0.0, 1.0, 1.0, 1.0, 1.0, 0.0);
-    mesh.push_back(t);
+  t = Triangle(leftX, topY, backZ, leftX, topY, frontZ, rightX, topY, backZ, yellow);
+  t.setTexUVs(0.0, 0.0, 0.0, -2.0, 2.0, 0.0);
+  _defaultMesh.push_back(t);
+  t = Triangle(leftX, topY, frontZ, rightX, topY, frontZ, rightX, topY, backZ, yellow);
+  t.setTexUVs(0.0, -2.0, 2.0, -2.0, 2.0, 0.0);
+  _defaultMesh.push_back(t);
 
   // Bottom
-  t = new Triangle(leftX, bottomY, frontZ, leftX, bottomY, backZ, rightX, bottomY, frontZ, violet);
-  t->setTexUVs(0.0, 0.0, 0.0, 1.0, 1.0, 0.0);
-    mesh.push_back(t);
-  t = new Triangle(leftX, bottomY, backZ, rightX, bottomY, backZ, rightX, bottomY, frontZ, violet);
-  t->setTexUVs(0.0, 1.0, 1.0, 1.0, 1.0, 0.0);
-    mesh.push_back(t);
+  t = Triangle(leftX, bottomY, frontZ, leftX, bottomY, backZ, rightX, bottomY, frontZ, violet);
+  t.setTexUVs(0.0, 0.0, 0.0, -2.0, 2.0, 0.0);
+  _defaultMesh.push_back(t);
+  t = Triangle(leftX, bottomY, backZ, rightX, bottomY, backZ, rightX, bottomY, frontZ, violet);
+  t.setTexUVs(0.0, -2.0, 2.0, -2.0, 2.0, 0.0);
+  _defaultMesh.push_back(t);
 
-  for (size_t i=0; i<mesh.size(); i++) {
-    Triangle* t = mesh[i];
-    t->rotateX(glm::radians(_xrot));
-    t->rotateY(glm::radians(_yrot));
+  createScaledMesh(_defaultMesh);
+}
+
+void GameImpl::createScaledMesh(vector<Triangle>& sourceMesh)
+{
+  _scaledMesh.clear();
+  for (size_t i=0; i<sourceMesh.size(); ++i) {
+    Triangle t = sourceMesh[i];
+    t.scale(_scale);
+    _scaledMesh.push_back(t);
   }
+  _oldScale = _scale;
 }
 
 void GameImpl::fpsChanged(int fps)
@@ -570,54 +772,97 @@ void GameImpl::resetGame()
 {
   stopTimer();
   setClientSize(this->hwnd, _clientWidth, _clientHeight);
+
+  _camera.resetToOrigin();
+  _camera.zeroRotation();
+  _camera.x = -200;
+  _camera.moveSpeed = MOVE_SPEED;
+  _camera.rotSpeed = ROT_SPEED;
+
   _xrot = 0;
   _yrot = 0;
-  _worldX = 0;
-  _worldY = 0;
-  _worldZ = -200;
   bufferDC.create(_clientWidth, _clientHeight);
+  zbuffer = Grid<float>(_clientWidth, _clientHeight);
   prepareScreenImageData();
   startTimer();
 }
 
 void GameImpl::updateGame()
 {
-  if (_keys[VK_UP]) {
-    _xrot += -1;
+  const bool left  = _keys[VK_LEFT];
+  const bool right = _keys[VK_RIGHT];
+  const bool forwards = _keys['W'];
+  const bool backwards = _keys['S'];
+  const bool strafeLeft = _keys['A'];
+  const bool strafeRight = _keys['D'];
+  const bool up = _keys['E'];
+  const bool down = _keys['Q'];
+  const bool lookup = _keys[VK_UP];
+  const bool lookdown = _keys[VK_DOWN];
+  float distance = 0;
+  float vdistance = 0;
+  float strafeMagnitude = 0;
+  float drotation = 0;
+  float strafeRotation = 0;
+
+  // let timeBasedFactor = timeElapsed / UPDATE_INTERVAL;
+  float timeBasedFactor = 1;
+
+  // Rotation to add
+  if (left) {
+    drotation = _camera.rotSpeed;
   }
-  if (_keys[VK_DOWN]) {
-    _xrot += 1;
+  else if (right) {
+    drotation = -_camera.rotSpeed;
   }
-  if (_keys[VK_LEFT]) {
-    _yrot += -1;
+
+  // Distance to travel
+  if (forwards) {
+    distance = _camera.moveSpeed;
   }
-  if (_keys[VK_RIGHT]) {
-    _yrot += 1;
+  else if (backwards) {
+    distance = -_camera.moveSpeed;
   }
-  
-  const int oldWorldZ = _worldZ;
-  if (_keys['W']) {
-    _worldZ += _zStep;
+
+  // Vertical Distance
+  if (up) {
+    vdistance = _camera.moveSpeed;
   }
-  else if (_keys['S']) {
-    _worldZ -= _zStep;
+  else if (down) {
+    vdistance = -_camera.moveSpeed;
   }
-  if (_worldZ>-100) {
-    _worldZ = oldWorldZ;
-  }
-  
-  if (_keys['A']) {
-    _worldX += _xStep;
-  }
-  if (_keys['D']) {
-    _worldX -= _xStep;
-  }
-  if (_keys['E']) {
-    _worldY += _yStep;
-  }
-  if (_keys['Q']) {
-    _worldY -= _yStep;
-  }
+
+  // Calculate movement vector without strafing first
+  _camera.rot += drotation * timeBasedFactor;
+  float dx = cos(_camera.rot) * distance * timeBasedFactor;
+  float dy = sin(_camera.rot) * distance * timeBasedFactor;
+  float dz = vdistance;
+
+  // Strafing left/right is just adding/subtracting 90 degrees to the
+  // player's rotation
+   if (strafeLeft) {
+     strafeMagnitude = _camera.moveSpeed;
+     strafeRotation  = _camera.rot + M_PI / 2;
+   }
+   else if (strafeRight) {
+     strafeMagnitude = _camera.moveSpeed;
+     strafeRotation  = _camera.rot - M_PI / 2;
+   }
+
+   // Add strafing vector to movement vector
+   dx += cos(strafeRotation) * strafeMagnitude * timeBasedFactor ;
+   dy += sin(strafeRotation) * strafeMagnitude * timeBasedFactor;
+
+  // Cartesian Y to Window Y
+  dy = -dy;
+
+  const float newX = _camera.x + dx;
+  const float newY = _camera.y + dy;
+  const float newZ = _camera.z + dz;
+
+  _camera.x = newX;
+  _camera.y = newY;
+  _camera.z = newZ;
 }
 
 void GameImpl::drawFPS(HDC hdc)
@@ -627,28 +872,41 @@ void GameImpl::drawFPS(HDC hdc)
   
   RECT rc = {0} ;
   GetClientRect( hwnd, &rc ) ;
-  
+
   DrawText(hdc, fpsText, -1, &rc, DT_LEFT|DT_TOP);
 }
 
 void GameImpl::drawWorld(HDC hdc)
 {
-  _fps++;
-  screenImageData.clear();
-  
-  createMesh();
-  
-  for (size_t i=0; i<mesh.size(); ++i) {
-    Triangle* t = mesh[i];
-    
+  screenImageData.fill(_backgroundColor);
+
+  zbuffer.fill(0);
+
+  if (_oldScale != _scale) {
+    printf("Scale changed, recreating scaled mesh\n");
+    createScaledMesh(_loadedMesh.empty() ? _defaultMesh : _loadedMesh);
+  }
+  _mesh = _scaledMesh;
+  for (size_t i=0; i<_mesh.size(); i++) {
+    Triangle& t = _mesh[i];
+    t.rotateX(deg2rad(_xrot));
+    t.rotateY(deg2rad(_yrot));
+  }
+
+  for (size_t i=0; i<_mesh.size(); ++i) {
+    Triangle* t = &_mesh[i];
+
     float fovydeg = 90.0f;
-    float fovyrad = glm::radians(fovydeg);
+    float fovyrad = deg2rad(fovydeg);
     float znear = 1.f;
     float zfar = 1000.f;
-    
-    glm::mat4 translate = glm::translate(glm::mat4(1), glm::vec3(_worldX, _worldY, _worldZ));
+
+    glm::vec3 moveVector = Camera::xyzToZXY(-_camera.x, -_camera.y, -_camera.z);
+    glm::mat4 translate = glm::translate(glm::mat4(1), moveVector);
     glm::mat4 proj = glm::perspective(fovyrad, _clientWidth/(float)_clientHeight, znear, zfar);
-    glm::mat4 viewProj = proj * translate;
+    glm::mat4 rotateY = glm::rotate(glm::mat4(1), _camera.rot, glm::vec3(0.0f, -1.0f, 0.0f));
+//    glm::mat4 rotateX = glm::rotate(glm::mat4(1), _camera.vrot, glm::vec3(0.0f, 1.0f, 0.0f));
+    glm::mat4 viewProj = proj * rotateY * translate;
 
     Vertex* vertices = t->getVertices();
     glm::vec4 v1 = vertices[0].pos().vec4();
@@ -670,8 +928,10 @@ void GameImpl::drawWorld(HDC hdc)
     trianglesToClip.push_back(triangleToClip);
 
     // Clip the triangle to the frustrum volume
-    vector<Triangle> clippedTriangles = 
-    ClipSpace::clipByAllPlanes(trianglesToClip);
+    vector<Triangle> clippedTriangles = (_clipMode == CLIP_ALL)
+      ? ClipSpace::clipByAllPlanes(trianglesToClip)
+      : ClipSpace::clipByNearPlane(trianglesToClip)
+      ;
 
     for (size_t i=0; i<clippedTriangles.size(); ++i) {
       Triangle triangle = clippedTriangles[i];
@@ -728,11 +988,38 @@ void GameImpl::drawWorld(HDC hdc)
       }
 
       else if (_drawType==DrawPerspectiveCorrect) {
-        Graphics2D::texturedTriangle(screenImageData,
-                                     win1[0], win1[1], triangle.getW(0), triangle.getTexU(0), triangle.getTexV(0),
-                                     win2[0], win2[1], triangle.getW(1), triangle.getTexU(1), triangle.getTexV(1),
-                                     win3[0], win3[1], triangle.getW(2), triangle.getTexU(2), triangle.getTexV(2),
-                                     _textureImageDatas[_textureID]);
+        ImageData* textureData = &_textureImageDatas[_textureID];
+        if (-1 != t->textureID) {
+          if (_loader.textures.count(t->textureID)) {
+            ImageData* tmptextureData = &(_loader.textures[t->textureID]);
+            if (tmptextureData) {
+              textureData = tmptextureData;
+            }
+          }
+        }
+        if (textureData) {
+          float x1 = win1[0], y1 = win1[1];
+          float x2 = win2[0], y2 = win2[1];
+          float x3 = win3[0], y3 = win3[1];
+           bool roundingOn = false;
+           if (roundingOn) {
+             x1 = round(x1), y1 = round(y1);
+             x2 = round(x2), y2 = round(y2);
+             x3 = round(x3), y3 = round(y3);
+           }
+//          textureData->blit(screenImageData, 100, 100, 0, 0, 100, 100);
+           Graphics2D::texturedTriangle(screenImageData,
+                                      x1, y1, triangle.getW(0), triangle.getTexU(0), triangle.getTexV(0),
+                                      x2, y2, triangle.getW(1), triangle.getTexU(1), triangle.getTexV(1),
+                                      x3, y3, triangle.getW(2), triangle.getTexU(2), triangle.getTexV(2),
+                                      *textureData,
+                                      (_zbufferOn ? &zbuffer:0));
+
+        }
+      }
+
+      else {
+        // draw nothing
       }
 
       if (_drawWireframe) {
@@ -750,6 +1037,8 @@ void GameImpl::drawWorld(HDC hdc)
     0, 0, 0, screenImageData.height(),
     screenImageData.data(), &_dbmi, 0
   );
+
+  _fps++;
 }
 
 //------------------------------------------------------------------------------

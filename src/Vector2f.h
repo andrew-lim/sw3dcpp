@@ -96,6 +96,11 @@ public:
     return Vector2f(this->x() * r, this->y() * r);
   }
 
+  Vector2f mul(float scaleX, float scaleY)
+  {
+    return Vector2f(x() * scaleX, y() * scaleY);
+  }
+
   Vector2f div(Vector2f r) const
   {
       return Vector2f(this->x() / r.x(), this->y() / r.y());
