@@ -3,40 +3,61 @@
 #include "Vertex.h"
 using namespace al::graphics;
 
-inline static int clipLeft(float x)
+inline static int adjustTop(float v)
 {
-  int newx = (int)(x + 0.5f);
-  if (newx < 0) {
-    newx = 0;
-  }
-  return newx;
+  return v;
 }
 
-inline static int clipRight(float x, int viewWidth)
+inline static int adjustMid(float v)
 {
-  int newx = (int)(x + 0.5f);
-  if (newx >= viewWidth) {
-    newx = viewWidth - 1;
-  }
-  return newx;
+  return v;
 }
 
-inline static int clipTop(float y)
+inline static int adjustBottom(float v)
 {
-  int newy = (int)(y + 0.5f);
-  if (newy < 0) {
-    newy = 0;
-  }
-  return newy;
+  return v;
 }
 
-inline static int clipBottom(float y, float viewHeight)
+inline static int adjustLeft(float v)
 {
-  int newy = (int)(y + 0.5f);
-  if (newy >= viewHeight) {
-    newy = viewHeight - 1;
+  return v;
+}
+
+inline static int adjustRight(float v)
+{
+  return v;
+}
+
+inline static int clipLeft(int v)
+{
+  if (v < 0) {
+    v = 0;
   }
-  return newy;
+  return v;
+}
+
+inline static int clipRight(int v, int viewWidth)
+{
+  if (v >= viewWidth) {
+    v = viewWidth - 1;
+  }
+  return v;
+}
+
+inline static int clipTop(int v)
+{
+  if (v < 0) {
+    v = 0;
+  }
+  return v;
+}
+
+inline static int clipBottom(float v, int viewHeight)
+{
+  if (v >= viewHeight) {
+    v = viewHeight - 1;
+  }
+  return v;
 }
 
 // Gets the pixel from an ImageData bitmap by converting UV coordinates
@@ -439,12 +460,14 @@ texturedTriangle(ImageData& imageData,
       (mid2.v() - top.v()) / std::abs(dytopmid)
     ));
 
-    int ystart = clipTop(top.y());
-    int yend   = clipBottom(mid.y(), imageData.height());
+    const float topy = adjustTop(top.y());
+    const float midy = adjustMid(mid.y());
+    int ystart = clipTop(topy);
+    int yend   = clipBottom(midy, imageData.height());
 //    if (ystart<0) ystart = 0;
 //    if (yend>=(int)imageData.height()) yend = imageData.height()-1;
     for (int y=ystart; y<=yend; y++) {
-      const int ysteps = y - (top.y()+0.5f);
+      const int ysteps = y - topy;
 
       // Left Point
       const Vertex left(Vertex::xywuv(
@@ -470,10 +493,12 @@ texturedTriangle(ImageData& imageData,
         const float ustep = (right.u()-left.u()) / dx;
         const float vstep = (right.v()-left.v()) / dx;
         const float wstep = (right.w()-left.w()) / dx;
-        const int xstart = clipLeft(left.x());
-        const int xend   = clipRight(right.x(), (int)imageData.width());
+        const float leftx = adjustLeft(left.x());
+        const float rightx = adjustRight(right.x());
+        const int xstart = clipLeft(leftx);
+        const int xend   = clipRight(rightx, (int)imageData.width());
         for (int x=xstart; x<=xend; x++) {
-          const int xsteps = x-left.x();
+          const int xsteps = x-leftx;
           const float u = left.u() + xsteps * ustep;
           const float v = left.v() + xsteps * vstep;
           const float w = left.w() + xsteps * wstep;
@@ -514,12 +539,12 @@ texturedTriangle(ImageData& imageData,
       (bot.v() - mid2.v()) / std::abs(dymidbot)
     ));
 
-    int ystart = clipTop(mid.y());
-    int yend   = clipBottom(bot.y(), imageData.height());
-//    if (ystart<0) ystart = 0;
-//    if (yend>=(int) imageData.height()) yend = imageData.height()-1;
+    const float midy = adjustTop(mid.y());
+    const float boty = adjustMid(bot.y());
+    int ystart = clipTop(midy);
+    int yend   = clipBottom(boty, imageData.height());
     for (int y=ystart; y<=yend; y++) {
-      const int ysteps  = y - (mid.y()+0.5f);
+      const int ysteps  = y - midy;
 
       // Left Point
       const Vertex left(Vertex::xywuv(
@@ -545,10 +570,12 @@ texturedTriangle(ImageData& imageData,
         const float ustep = (right.u()-left.u()) / dx;
         const float vstep = (right.v()-left.v()) / dx;
         const float wstep = (right.w()-left.w()) / dx;
-        const int xstart = clipLeft(left.x());
-        const int xend   = clipRight(right.x(), (int)imageData.width());
+        const float leftx = adjustLeft(left.x());
+        const float rightx = adjustRight(right.x());
+        const int xstart = clipLeft(leftx);
+        const int xend   = clipRight(rightx, (int)imageData.width());
         for (int x=xstart; x<=xend; x++) {
-          const int xsteps = x-left.x();
+          const int xsteps = x-leftx;
           const float u = left.u() + xsteps * ustep;
           const float v = left.v() + xsteps * vstep;
           const float w = left.w() + xsteps * wstep;
