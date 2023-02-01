@@ -9,7 +9,7 @@ namespace al { namespace graphics {
 class Vertex
 {
 private:
-  
+
   Vector4f _pos;
   Vector2f _texcoords;
   
@@ -17,20 +17,20 @@ public:
   
   static Vertex xyuv(float x, float y, float u, float v)
   {
-    return Vertex(
-      Vector4f(x, y, 0, 0),
-      Vector2f(u, v)
-    );
+    return {
+      {x, y, 0, 0},
+      {u, v}
+    };
   }
   
   static Vertex xywuv(float x, float y, float w, float u, float v)
   {
-    return Vertex(
-      Vector4f(x, y, 0, w),
-      Vector2f(u, v)
-    );
+    return {
+      {x, y, 0, w},
+      {u, v}
+    };
   }
-  
+
   Vertex(float x, float y=0, float z=0, float w=1)
   : _pos(x, y, z, w)
   {
@@ -93,7 +93,7 @@ public:
   {
     return _pos.w();
   }
-  
+
   float u() const
   {
     return _texcoords.u();
@@ -104,24 +104,12 @@ public:
     return _texcoords.v();
   }
 
-  bool isInsideViewFrustum() const
+  Vertex changeX(float newX)
   {
-    return isInsideXPlanes() && isInsideYPlanes() && isInsideZPlanes();
-  }
-
-  bool isInsideXPlanes() const
-  {
-    return fabs(_pos.x()) <= fabs(_pos.w());
-  }
-
-  bool isInsideYPlanes() const
-  {
-    return fabs(_pos.y()) <= fabs(_pos.w());
-  }
-
-  bool isInsideZPlanes() const
-  {
-    return fabs(_pos.z()) <= fabs(_pos.w());
+    return Vertex(
+      _pos.changeX(newX),
+      _texcoords
+    );
   }
 
   Vertex lerp(const Vertex& other, float lerpFactor) const
@@ -137,6 +125,110 @@ public:
       _pos.mul(f, f, f, 1),
       _texcoords
     );
+  }
+
+  Vertex add(const Vertex& r) const
+  {
+    return Vertex(
+      _pos.add(r._pos),
+      _texcoords.add(r._texcoords)
+    );
+  }
+
+  Vertex add(float r) const
+  {
+    return Vertex(
+      _pos.add(r),
+      _texcoords.add(r)
+    );
+  }
+
+  Vertex sub(const Vertex& r) const
+  {
+    return Vertex(
+      _pos.sub(r._pos),
+      _texcoords.sub(r._texcoords)
+    );
+  }
+
+  Vertex sub(float r) const
+  {
+    return Vertex(
+      _pos.sub(r),
+      _texcoords.sub(r)
+    );
+  }
+
+  Vertex mul(const Vertex& r) const
+  {
+    return Vertex(
+      _pos.mul(r._pos),
+      _texcoords.mul(r._texcoords)
+    );
+  }
+
+  Vertex mul(float r) const
+  {
+    return Vertex(
+      _pos.mul(r),
+      _texcoords.mul(r)
+    );
+  }
+
+  Vertex div(const Vertex& r) const
+  {
+    return Vertex(
+      _pos.div(r._pos),
+      _texcoords.div(r._texcoords)
+    );
+  }
+
+  Vertex div(float r) const
+  {
+    return Vertex(
+      _pos.div(r),
+      _texcoords.div(r)
+    );
+  }
+
+  Vertex operator+(const Vertex& r) const
+  {
+    return add(r);
+  }
+
+  Vertex operator+(float r) const
+  {
+    return add(r);
+  }
+
+  Vertex operator-(const Vertex& r) const
+  {
+    return sub(r);
+  }
+
+  Vertex operator-(float r) const
+  {
+    return sub(r);
+  }
+
+  Vertex operator/(const Vertex& r) const
+  {
+    return div(r);
+  }
+
+  Vertex operator/(float r) const
+  {
+    return div(r);
+  }
+
+  Vertex operator*(const Vertex& r) const
+  {
+    return mul(r);
+  }
+
+  Vertex operator*(float r) const
+  {
+    return mul(r);
   }
   
 }; // class Vector4f

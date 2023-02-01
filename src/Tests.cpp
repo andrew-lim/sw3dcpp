@@ -207,8 +207,28 @@ void testfmod()
   printf("--- testfmod() end\n\n");
 }
 
+void testFloats()
+{
+  printf("--- testFloats() start\n");
+
+  float midy = 1.23f;
+  int y = 1;
+  int ystep = y - midy;
+  if (midy > y) {
+    printf("mid>y\n");
+  }
+  else {
+    printf("mid<=y\n");
+  }
+  printf("ystep=%d\n", ystep);
+
+  printf("--- testFloats() end\n\n");
+}
+
 void Tests::run()
 {
+  std::cout << "__cplusplus=" << __cplusplus << std::endl;
+  testFloats();
   testVector4f();
   testVertex();
   testTinyObj();

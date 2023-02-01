@@ -3,15 +3,26 @@
 
 #include "ImageData.h"
 #include "Grid.h"
+#include "Vertex.h"
 
 namespace al { namespace graphics {
-  
+
+inline static int clampZero(int v)
+{
+  return v<0 ? 0 : v;
+}
+
+inline static int clampSize(int v, int size)
+{
+  return v>=size ? size-1 : v;
+}
+
 class Graphics2D
 {
 public:
-  static float clampUV(float val);
+
   static u32& pixelAtUV(ImageData& imageData, float u, float v);
-  
+
     /**
    * Calculates the cross-product from 3 vertices but ignores the Z component
    * Should be used in NDC space
@@ -48,7 +59,14 @@ public:
                              int x1, int y1, float u1, float v1,
                              int x2, int y2, float u2, float v2,
                              int x3, int y3, float u3, float v3, 
-                             ImageData& textureImageData);                      
+                             ImageData& textureImageData);
+
+  static inline void texturedScanLine(ImageData& imageData,
+                                      int y,
+                                      const Vertex& left,
+                                      const Vertex& right,
+                                      ImageData& textureImageData,
+                                      Grid<float>* zbuffer=0);
 
   static void texturedTriangle(ImageData& imageData, 
                                float x1, float y1, float w1, float u1, float v1,

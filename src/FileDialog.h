@@ -18,6 +18,12 @@ protected:
 
 public:
 
+  wchar_t fileTitle[MAX_PATH] ;
+  wchar_t fileName[MAX_PATH] ;
+  wchar_t* filter ;
+
+
+
   /**
    *  Creates a <code>FileDialog</code> with owner window
    *  <code>hwndOwner</code>.
@@ -30,6 +36,10 @@ public:
 
     m_fileTitle[0] = TEXT('\0');
     m_fileName[0]  = TEXT('\0');
+
+    filter = (wchar_t*)L"*.*\0*.*\0";
+    fileTitle[0] = L'\0';
+    fileName[0] = L'\0';
   }
 
   /**
@@ -85,7 +95,7 @@ class OpenFileDialog : public FileDialog
 public:
 
   bool showDialog( HWND hwndOwner = NULL );
-
+  bool showDialogW( HWND hwndOwner );
 };
 
 /**

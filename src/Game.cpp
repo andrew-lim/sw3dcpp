@@ -30,6 +30,7 @@
 #include "FileDialog.h"
 #include "lodepng.h"
 #include "Camera.h"
+#include <iostream>
 using namespace std ;
 using namespace al::graphics;
 using namespace glm;
@@ -431,15 +432,47 @@ void GameImpl::loadImages()
   }
 }
 
+// Convert a wide Unicode string to an UTF8 string
+// https://stackoverflow.com/a/3999597/1645045
+std::string utf8_encode(const std::wstring &wstr)
+{
+    if( wstr.empty() ) return std::string();
+    int size_needed = WideCharToMultiByte(CP_UTF8, 0, &wstr[0], -1, NULL, 0, NULL, NULL);
+    std::string strTo( size_needed, 0 );
+    WideCharToMultiByte                  (CP_UTF8, 0, &wstr[0], -1, &strTo[0], size_needed, NULL, NULL);
+    return strTo;
+}
+
+std::string shortPathName(const wchar_t* path)
+{
+  wchar_t shortpath[256] = {0};
+
+  int ok = GetShortPathNameW(path, shortpath, 256);
+  if (!ok) {
+    printf("GetShortPathName failed with result %d\n", ok);
+    int lastError = GetLastError();
+    printf("GetLastError()=%d\n", lastError);
+  }
+
+  return utf8_encode(shortpath);
+}
+
+static std::wstring filepath;
+
 void GameImpl::showOpenOBJDialog()
 {
   OpenFileDialog dialog ;
-  dialog.setFilter(TEXT((TCHAR*)"OBJ Files\0*.obj\0\0"));
-  if ( dialog.showDialog( this->hwnd ) ) {
+  dialog.setFilter((TCHAR*)TEXT("OBJ Files\0*.obj\0\0"));
+  dialog.filter = (wchar_t*)L"OBJ Files\0*.obj\0\0";
+  if ( dialog.showDialogW( this->hwnd ) ) {
     try {
-      string path = dialog.getFileName();
+      wchar_t* path = dialog.fileName;
+      filepath = path;
+      string shortpath = shortPathName(path);
+      cout << "shortpath=" << shortpath << endl;
+
       vector<Triangle> mesh;
-      _loader.load(path, 1.0f);
+      _loader.load(shortpath, 1.0f);
       if (0==_loader.triangles.size()) {
         throw runtime_error("No triangles loaded");
       }
@@ -625,7 +658,7 @@ LRESULT GameImpl::handleMessage( UINT msg, WPARAM wParam, LPARAM lParam )
         _clipMenu.setMenuItemChecked( MIClipAll, _clipMode==CLIP_ALL);
         _clipMenu.setMenuItemChecked( MIClipNearOnly, _clipMode==CLIP_NEAR_ONLY);
       }
-      
+
       return 0 ; 
     }
 
@@ -638,7 +671,7 @@ LRESULT GameImpl::handleMessage( UINT msg, WPARAM wParam, LPARAM lParam )
       bufferDC.draw( hDC );
       
       EndPaint( hwnd, &ps ) ;
-      return 0 ; 
+      return 0 ;
     }
 
     
@@ -890,6 +923,10 @@ void GameImpl::drawFPS(HDC hdc)
   GetClientRect( hwnd, &rc ) ;
 
   DrawText(hdc, fpsText, -1, &rc, DT_LEFT|DT_TOP);
+
+  if (!filepath.empty()) {
+    DrawTextW(hdc, filepath.c_str(), -1, &rc, DT_LEFT|DT_BOTTOM|DT_SINGLELINE);
+  }
 }
 
 void GameImpl::drawWorld(HDC hdc)
@@ -928,7 +965,7 @@ void GameImpl::drawWorld(HDC hdc)
     glm::vec4 v1 = vertices[0].pos().vec4();
     glm::vec4 v2 = vertices[1].pos().vec4();
     glm::vec4 v3 = vertices[2].pos().vec4();
-    
+
     glm::vec4 clip1 = viewProj * v1;
     glm::vec4 clip2 = viewProj * v2;
     glm::vec4 clip3 = viewProj * v3;
@@ -996,11 +1033,20 @@ void GameImpl::drawWorld(HDC hdc)
       }
 
       else if (_drawType==DrawAffine) {
+        ImageData* textureData = &_textureImageDatas[_textureID];
+        if (-1 != t->textureID) {
+          if (_loader.textures.count(t->textureID)) {
+            ImageData* tmptextureData = &(_loader.textures[t->textureID]);
+            if (tmptextureData) {
+              textureData = tmptextureData;
+            }
+          }
+        }
         Graphics2D::affineTriangle(screenImageData,
                                    win1[0], win1[1], triangle.getTexU(0), triangle.getTexV(0),
                                    win2[0], win2[1], triangle.getTexU(1), triangle.getTexV(1),
                                    win3[0], win3[1], triangle.getTexU(2), triangle.getTexV(2),
-                                   _textureImageDatas[_textureID]);
+                                   *textureData);
       }
 
       else if (_drawType==DrawPerspectiveCorrect) {
@@ -1042,7 +1088,7 @@ void GameImpl::drawWorld(HDC hdc)
     }
   } // for mesh.size()
   
-  SetDIBitsToDevice(hdc, 
+  SetDIBitsToDevice(hdc,
     0, 0, screenImageData.width(), screenImageData.height(), 
     0, 0, 0, screenImageData.height(),
     screenImageData.data(), &_dbmi, 0

@@ -11,7 +11,7 @@ int WINAPI WinMain( HINSTANCE hInst, HINSTANCE hPrev, LPSTR args, int nShow )
   }
   catch( std::exception& ex )
   {
-    MessageBox( NULL, ex.what(), "Exception Caught!", MB_OK ) ;
+    MessageBox( NULL, ex.what(), TEXT("Exception Caught!"), MB_OK ) ;
     return 0 ;
   }
 }

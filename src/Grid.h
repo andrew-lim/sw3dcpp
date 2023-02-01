@@ -35,6 +35,16 @@ public:
     _elements[x][y] = value;
   }
 
+  T unsafeGet(size_t x, size_t y)
+  {
+    return _elements[x][y];
+  }
+
+  void unsafeSet(size_t x, size_t y, const T& value)
+  {
+    _elements[x][y] = value;
+  }
+
   size_t width() const ;
   size_t height() const ;
   size_t size() const ;

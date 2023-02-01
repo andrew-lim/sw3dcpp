@@ -13,7 +13,7 @@ private:
   float parts[4];
   
 public:
-  
+
   Vector4f(float x=0, float y=0, float z=0, float w=1)
   {
     parts[0] = x;
@@ -78,6 +78,11 @@ public:
   float v() const
   {
     return parts[1];
+  }
+
+  Vector4f changeX(float newX) const
+  {
+    return Vector4f(newX, y(), z(), w());
   }
 
   Vector4f add(Vector4f r) const

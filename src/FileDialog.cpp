@@ -1,5 +1,21 @@
 #include "FileDialog.h"
 
+bool OpenFileDialog::showDialogW( HWND hwndOwner )
+{
+  OPENFILENAMEW ofn = {0};
+
+  ofn.lStructSize    = sizeof(OPENFILENAME);
+  ofn.lpstrTitle     = L"" ;
+  ofn.lpstrFileTitle = fileTitle ;
+  ofn.hwndOwner      = hwndOwner ;
+  ofn.lpstrFilter    = filter;
+  ofn.lpstrFile      = fileName;
+  ofn.nMaxFile       = MAX_PATH;
+  ofn.nMaxFileTitle  = MAX_PATH;
+  ofn.Flags          = OFN_FILEMUSTEXIST|OFN_HIDEREADONLY|OFN_NOCHANGEDIR ;
+
+  return ::GetOpenFileNameW(&ofn) != 0 ;
+}
 
 
 bool OpenFileDialog::showDialog( HWND hwndOwner )
