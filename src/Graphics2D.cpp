@@ -337,17 +337,14 @@ inline void Graphics2D::texturedScanLine(ImageData& imageData,
       const int xsteps = x-leftx;
       const Vertex tex = left + scanlinestep * xsteps;
       const float z = 1/tex.w();
+      if (zbuffer && z<zbuffer->unsafeGet(x,y)) {
+        zbuffer->unsafeSet(x, y, z);
+      }
+      else {
+        continue;
+      }
       const float texu = tex.u() * z;
       const float texv = tex.v() * z;
-      if (zbuffer) {
-        const int oldz = zbuffer->unsafeGet(x, y);
-        if (oldz==0 || z<oldz) {
-          zbuffer->unsafeSet(x, y, z);
-        }
-        else {
-          continue;
-        }
-      }
       imageData.pixel(x, y) = Graphics2D::pixelAtUV(textureImageData,
                                                     texu, texv);
     }

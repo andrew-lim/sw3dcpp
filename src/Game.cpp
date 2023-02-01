@@ -933,7 +933,7 @@ void GameImpl::drawWorld(HDC hdc)
 {
   screenImageData.fill(_backgroundColor);
 
-  zbuffer.fill(0);
+  zbuffer.fill(numeric_limits<float>::infinity());
 
   if (_oldScale != _scale) {
     printf("Scale changed, recreating scaled mesh\n");
