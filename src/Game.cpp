@@ -83,19 +83,6 @@ glm::vec4 ndcToWindow(glm::vec4 point, float windowWidth, float windowHeight)
   return glm::vec4(xWindow, yWindow, zWindow, 1);
 }
 
-uint8_t* loadPNG(const string& filename, unsigned& width, unsigned& height)
-{
-  unsigned error;
-  uint8_t* image = 0;
-  error = lodepng_decode32_file(&image, &width, &height, filename.c_str());
-  if (error) {
-    string msg = "lodepng::decode failed. Error: ";
-    msg += lodepng_error_text(error);
-    throw runtime_error(msg);
-  }
-  return image;
-}
-
 //------------------------------------------------------------------------------
 //  GameImpl Definition
 //------------------------------------------------------------------------------
@@ -146,6 +133,8 @@ private:
     , MIMeshDefault = 1200
     , MIMesh0
     , MIMesh1
+    , MIControls
+    , MIAbout
   };
   
   enum DrawType {
@@ -176,6 +165,8 @@ private:
   void loadImages();
   void createMenus();
   void showOpenOBJDialog();
+  void showControls();
+  void showAbout();
   static void CALLBACK TimeProc(UINT uID, UINT uMsg, DWORD_PTR dwUser, DWORD_PTR d1, DWORD_PTR d2);
   
   BITMAPINFOHEADER _bmih;
@@ -202,7 +193,8 @@ private:
   float _oldScale = 1;
   Grid<float> zbuffer;
   vector<Triangle> _mesh, _defaultMesh, _loadedMesh, _scaledMesh;
-  Menu _menuBar, _mainMenu, _optionsMenu, _textureMenu, _meshMenu, _clipMenu;
+  Menu _menuBar, _mainMenu, _optionsMenu, _textureMenu, _meshMenu, _clipMenu,
+       _helpMenu;
   OBJLoader _loader;
   uint32_t _backgroundColor = 0;
   Camera _camera;
@@ -234,6 +226,7 @@ GameImpl::GameImpl()
   , _textureMenu(true)
   , _meshMenu(true)
   , _clipMenu(true)
+  , _helpMenu(true)
   , _loader(true)
 {
   _textureID = 0;
@@ -303,12 +296,11 @@ void GameImpl::stopTimer() {
 
 void GameImpl::createMenus()
 {
-  _mainMenu.add("Reset", MIReset ) ;
-  _mainMenu.add("Use Default Cube", MIMeshDefault ) ;
+  _mainMenu.add("Reset\tR", MIReset ) ;
   _mainMenu.add("Open OBJ...", MIOpenOBJ ) ;
   _mainMenu.addSeparator() ;
   _mainMenu.add("Exit", MIExit ) ;
-  
+
   _optionsMenu.add("Nothing / Wireframe Only", MINothing);
   _optionsMenu.add("Solid", MISolid);
   _optionsMenu.add("Affine", MIAffine);
@@ -329,10 +321,11 @@ void GameImpl::createMenus()
   _optionsMenu.addSeparator();
   _optionsMenu.add("Black Background", MIBlackBackground);
   _optionsMenu.add("Blue Background", MIBlueBackground);
-  
+
+  _textureMenu.add("Show Default Cube", MIMeshDefault ) ;
   for (size_t i=0; i<_textureImageDatas.size(); ++i) {
     TCHAR s[128];
-    sprintf(s, "Texture %d", (int)(i+1));
+    sprintf(s, "Cube Texture %d", (int)(i+1));
     _textureMenu.add(s, MITexture1 + i);
   }
 
@@ -352,15 +345,17 @@ void GameImpl::createMenus()
   _clipMenu.add("Clip All Planes", MIClipAll);
   _clipMenu.add("Clip Near Plane Only", MIClipNearOnly);
 
+  _helpMenu.add("Controls...", MIControls);
+  _helpMenu.add("About...", MIAbout);
+
   _menuBar.add( _mainMenu, "Main" ) ;
   _menuBar.add( _optionsMenu, "Options" ) ;
-  _menuBar.add( _textureMenu, "Texture" ) ;
-  _menuBar.add( _meshMenu, "Mesh" ) ;
+  _menuBar.add( _textureMenu, "Debug" ) ;
+  _menuBar.add( _meshMenu, "Scale" ) ;
   _menuBar.add( _clipMenu, "Clip");
+  _menuBar.add( _helpMenu, "Help");
   _menuBar.attachToWindow( hwnd ) ;
   _optionsMenu.setMenuItemChecked( MIPerspectiveCorrect, true ) ;
-
-
 }
 
 void GameImpl::prepareScreenImageData()
@@ -401,32 +396,19 @@ void GameImpl::loadImages()
     string path = paths[i];
     printf("Loading image %s\n", path.c_str());
 
+    OBJLoader loader;
+    ImageData textureData;
+
     // PNG
     if (path.find(".png") != std::string::npos) {
-      unsigned w=0, h=0;
-      uint8_t* imgbytes = loadPNG(path, w, h);
-      _textureImageDatas.push_back(
-        ImageData(imgbytes, w, h, true)
-      );
+
+      loader.loadPNG(path, textureData);
+      _textureImageDatas.push_back(textureData);
     }
     // BMP
     else {
-      Bitmap bmp;
-      if (!bmp.loadFile(path.c_str())) {
-        string error = "Error loading " + path;
-        throw std::runtime_error(error.c_str());
-      }
-
-      uint8_t* bmpbytes = new uint8_t[bmp.getWidth() * bmp.getHeight() * 4];
-      uint32_t result = bmp.getBits(bmpbytes);
-      if (result == 0) {
-        string error = "0 scanlines loaded from " + path;
-        throw std::runtime_error(error.c_str());
-      }
-      _textureImageDatas.push_back(
-        ImageData(bmpbytes, bmp.getWidth(), bmp.getHeight(), true)
-      );
-      delete[] bmpbytes;
+      loader.loadBMP(path, textureData);
+      _textureImageDatas.push_back(textureData);
     }
 
   }
@@ -489,6 +471,21 @@ void GameImpl::showOpenOBJDialog()
       MessageBox( NULL, msg.c_str(), "Error", MB_OK ) ;
     }
   }
+}
+
+void GameImpl::showControls()
+{
+  MessageBox(hwnd, TEXT("Camera Controls:\n")
+                   TEXT("WASD - move forwards, backwards and strafe sideways\n")
+                   TEXT("Arrow Keys - rotate camera\n")
+                   TEXT("R - back to origin"), TEXT("Controls"), MB_OK);
+}
+
+void GameImpl::showAbout()
+{
+  MessageBox(hwnd, TEXT("Andrew Lim's' 3D Software Rasterizer\n")
+                   TEXT("https://github.com/andrew-lim/sw3dcpp"),
+                   TEXT("About"), MB_OK);
 }
 
 LRESULT GameImpl::handleMessage( UINT msg, WPARAM wParam, LPARAM lParam )
@@ -585,6 +582,9 @@ LRESULT GameImpl::handleMessage( UINT msg, WPARAM wParam, LPARAM lParam )
 
         case MIClipAll: _clipMode = CLIP_ALL; break;
         case MIClipNearOnly: _clipMode = CLIP_NEAR_ONLY; break;
+
+        case MIControls: showControls(); break;
+        case MIAbout: showAbout(); break;
         
         case MIExit: {
           stopTimer();
