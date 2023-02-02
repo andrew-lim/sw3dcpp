@@ -10,12 +10,12 @@ displayed with [SetDIBitsToDevice](https://learn.microsoft.com/en-us/windows/win
 ## Screenshots
 <table style="padding:10px">
   <tr>
-    <td width="50%"><img src="res/screenshot01.png"/></td>
-    <td width="50%"><img src="res/screenshot02.png"/></td>
+    <td width="50%"><img src="screenshots/screenshot01.png"/></td>
+    <td width="50%"><img src="screenshots/screenshot02.png"/></td>
   </tr>
   <tr>
-    <td width="50%"><img src="res/screenshot03.png"/></td>
-    <td width="50%"><img src="res/screenshot04.png"/></td>
+    <td width="50%"><img src="screenshots/screenshot03.png"/></td>
+    <td width="50%"><img src="screenshots/screenshot04.png"/></td>
   </tr>
 </table>
 
