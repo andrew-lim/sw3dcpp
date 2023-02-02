@@ -115,6 +115,8 @@ private:
     , MI1280x720
     , MI1366x768
     , MI1920x1080
+    , MIShowFPS
+    , MIShowFileName
     , MIScale001
     , MIScale01
     , MIScale05
@@ -175,7 +177,7 @@ private:
   ImageData         screenImageData;
 
   bool              _backfaceCullingOn;
-  bool              _zbufferOn;
+  bool              _zbufferOn, _fpsOn, _showFileName;
   vector<ImageData> _textureImageDatas;
 
   int _clientWidth = CLIENT_WIDTH;
@@ -200,7 +202,7 @@ private:
   Camera _camera;
   static const int CLIP_NEAR_ONLY = 0;
   static const int CLIP_ALL = 1;
-  int _clipMode = CLIP_NEAR_ONLY;
+  int _clipMode = CLIP_ALL;
 };
 
 //------------------------------------------------------------------------------
@@ -214,6 +216,8 @@ GameImpl::GameImpl()
            WS_OVERLAPPEDWINDOW&~(WS_MAXIMIZEBOX|WS_THICKFRAME), 0 )
   , _backfaceCullingOn(true)
   , _zbufferOn(true)
+  , _fpsOn(true)
+  , _showFileName(true)
   , _xrot()
   , _yrot()
   , _currentFPS()
@@ -309,6 +313,8 @@ void GameImpl::createMenus()
   _optionsMenu.add("Wireframe", MIWireframe);
   _optionsMenu.add("Backface Culling", MIBackfacCulling);
   _optionsMenu.add("Z Buffer", MIZBuffer);
+  _optionsMenu.add("Show FPS", MIShowFPS);
+  _optionsMenu.add("Show File Name", MIShowFileName);
   _optionsMenu.addSeparator();
   _optionsMenu.add("640x360", MI640x360);
   _optionsMenu.add("640x480", MI640x480);
@@ -439,7 +445,7 @@ std::string shortPathName(const wchar_t* path)
   return utf8_encode(shortpath);
 }
 
-static std::wstring filepath;
+static std::wstring filepath = L"Test Cube";
 
 void GameImpl::showOpenOBJDialog()
 {
@@ -551,6 +557,14 @@ LRESULT GameImpl::handleMessage( UINT msg, WPARAM wParam, LPARAM lParam )
           _zbufferOn = !_zbufferOn;
           break;
 
+        case MIShowFPS:
+          _fpsOn = !_fpsOn;
+          break;
+
+        case MIShowFileName:
+          _showFileName = !_showFileName;
+          break;
+
         case MIBackfacCulling:
           _backfaceCullingOn = !_backfaceCullingOn;
           break;
@@ -633,6 +647,8 @@ LRESULT GameImpl::handleMessage( UINT msg, WPARAM wParam, LPARAM lParam )
         _optionsMenu.setMenuItemChecked( MIWireframe, _drawWireframe );
         _optionsMenu.setMenuItemChecked( MIZBuffer, _zbufferOn );
         _optionsMenu.setMenuItemChecked( MIBackfacCulling, _backfaceCullingOn );
+        _optionsMenu.setMenuItemChecked( MIShowFPS, _fpsOn );
+        _optionsMenu.setMenuItemChecked( MIShowFileName, _showFileName );
         _optionsMenu.setMenuItemChecked( MI640x360, _clientWidth==640 && _clientHeight==360 );
         _optionsMenu.setMenuItemChecked( MI640x480, _clientWidth==640 && _clientHeight==480);
         _optionsMenu.setMenuItemChecked( MI800x600, _clientWidth==800 && _clientHeight==600);
@@ -917,15 +933,18 @@ void GameImpl::updateGame()
 void GameImpl::drawFPS(HDC hdc)
 {
   TCHAR fpsText[64];
-  sprintf(fpsText, "FPS: %lu", _currentFPS);
-  
   RECT rc = {0} ;
   GetClientRect( hwnd, &rc ) ;
 
-  DrawText(hdc, fpsText, -1, &rc, DT_LEFT|DT_TOP);
+  if (_fpsOn) {
+    sprintf(fpsText, "FPS: %lu", _currentFPS);
+    DrawText(hdc, fpsText, -1, &rc, DT_LEFT|DT_TOP);
+  }
 
-  if (!filepath.empty()) {
-    DrawTextW(hdc, filepath.c_str(), -1, &rc, DT_LEFT|DT_BOTTOM|DT_SINGLELINE);
+  if (_showFileName) {
+    if (!filepath.empty()) {
+      DrawTextW(hdc, filepath.c_str(), -1, &rc, DT_LEFT|DT_BOTTOM|DT_SINGLELINE);
+    }
   }
 }
 
@@ -952,7 +971,7 @@ void GameImpl::drawWorld(HDC hdc)
     float fovydeg = 90.0f;
     float fovyrad = deg2rad(fovydeg);
     float znear = 1.f;
-    float zfar = 1000.f;
+    float zfar = 100000.f;
 
     glm::vec3 moveVector = Camera::xyzToZXY(-_camera.x, -_camera.y, -_camera.z);
     glm::mat4 translate = glm::translate(glm::mat4(1), moveVector);

@@ -115,7 +115,17 @@ void OBJLoader::load(const std::string& path, float scale)
       ImageData textureData;
       string texturePath = materialFolder + string("\\") + material.diffuse_texname;
       d("material %d\ttexturePath=%s\n", (int)i, texturePath.c_str());
-      loadPNG(texturePath, textureData);
+
+      bool isBMP = path.find(".bmp") != std::string::npos ||
+                   path.find(".BMP") != std::string::npos;
+
+      if (isBMP) {
+        loadBMP(texturePath, textureData);
+      }
+      else {
+        loadPNG(texturePath, textureData);
+      }
+
       int key = (int)i;
       if (0==textures.count(key)) {
         textures[key] = textureData;
