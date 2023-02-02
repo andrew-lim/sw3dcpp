@@ -166,9 +166,11 @@ private:
   void prepareScreenImageData();
   void loadImages();
   void createMenus();
+  void loadOBJ(const wchar_t* filename);
   void showOpenOBJDialog();
   void showControls();
   void showAbout();
+  LRESULT onDropFiles( WPARAM, LPARAM );
   static void CALLBACK TimeProc(UINT uID, UINT uMsg, DWORD_PTR dwUser, DWORD_PTR d1, DWORD_PTR d2);
   
   BITMAPINFOHEADER _bmih;
@@ -213,7 +215,8 @@ HWND GameImpl::hwndMain;
 
 GameImpl::GameImpl()
   : Window( TEXT("Andrew Lim's' 3D Software Rasterizer"), NULL,
-           WS_OVERLAPPEDWINDOW&~(WS_MAXIMIZEBOX|WS_THICKFRAME), 0 )
+           (WS_OVERLAPPEDWINDOW)&~(WS_MAXIMIZEBOX|WS_THICKFRAME),
+           WS_EX_ACCEPTFILES)
   , _backfaceCullingOn(true)
   , _zbufferOn(true)
   , _fpsOn(true)
@@ -447,36 +450,49 @@ std::string shortPathName(const wchar_t* path)
 
 static std::wstring filepath = L"Test Cube";
 
+void GameImpl::loadOBJ(const wchar_t* path)
+{
+  filepath = path;
+  string shortpath = shortPathName(path);
+  try {
+    cout << "shortpath=" << shortpath << endl;
+    vector<Triangle> mesh;
+    _loader.load(shortpath, 1.0f);
+    if (0==_loader.triangles.size()) {
+      throw runtime_error("No triangles loaded");
+    }
+    stopTimer();
+    _loadedMesh = _loader.triangles;
+    _scale = _oldScale = 1;
+    createScaledMesh(_loadedMesh);
+    resetGame();
+  }
+  catch (exception& ex) {
+    string msg = "Error loading ";
+    msg += shortpath;
+    msg += " Exception=" + string(ex.what());
+    MessageBox( NULL, msg.c_str(), "Error", MB_OK ) ;
+  }
+}
+
 void GameImpl::showOpenOBJDialog()
 {
   OpenFileDialog dialog ;
   dialog.setFilter((TCHAR*)TEXT("OBJ Files\0*.obj\0\0"));
   dialog.filter = (wchar_t*)L"OBJ Files\0*.obj\0\0";
   if ( dialog.showDialogW( this->hwnd ) ) {
-    try {
-      wchar_t* path = dialog.fileName;
-      filepath = path;
-      string shortpath = shortPathName(path);
-      cout << "shortpath=" << shortpath << endl;
-
-      vector<Triangle> mesh;
-      _loader.load(shortpath, 1.0f);
-      if (0==_loader.triangles.size()) {
-        throw runtime_error("No triangles loaded");
-      }
-      stopTimer();
-      _loadedMesh = _loader.triangles;
-      _scale = _oldScale = 1;
-      createScaledMesh(_loadedMesh);
-      resetGame();
-    }
-    catch (exception& ex) {
-      string msg = "Error loading ";
-      msg += dialog.getFileName();
-      msg += " Exception=" + string(ex.what());
-      MessageBox( NULL, msg.c_str(), "Error", MB_OK ) ;
-    }
+    loadOBJ(dialog.fileName);
   }
+}
+
+LRESULT GameImpl::onDropFiles( WPARAM wParam, LPARAM lParam ) {
+  printf("onDropFiles called\n");
+  HDROP hDrop = (HDROP) wParam ;
+  wchar_t filePath[ MAX_PATH ];
+  if ( DragQueryFileW( hDrop, 0, filePath, MAX_PATH ) ) {
+    loadOBJ( filePath );
+  }
+  return 0 ;
 }
 
 void GameImpl::showControls()
@@ -599,7 +615,7 @@ LRESULT GameImpl::handleMessage( UINT msg, WPARAM wParam, LPARAM lParam )
 
         case MIControls: showControls(); break;
         case MIAbout: showAbout(); break;
-        
+
         case MIExit: {
           stopTimer();
           PostQuitMessage( 0 ); 
@@ -690,6 +706,7 @@ LRESULT GameImpl::handleMessage( UINT msg, WPARAM wParam, LPARAM lParam )
       return 0 ;
     }
 
+    case WM_DROPFILES: return onDropFiles( wParam, lParam );
     
     default: 
       return ::DefWindowProc( hwnd, msg, wParam, lParam ) ;
