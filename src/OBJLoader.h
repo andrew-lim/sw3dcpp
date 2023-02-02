@@ -10,10 +10,6 @@ namespace al { namespace graphics {
 
 class OBJLoader
 {
-private:
-
-  void loadPNG(const std::string& path, ImageData& imageData);
-
 public:
   OBJLoader(bool debug=false)
   : debug(debug)
@@ -29,6 +25,9 @@ public:
   void load(const std::string& path, float scale=1.0f);
 
   static std::string folder(const std::string& path);
+
+  void loadPNG(const std::string& path, ImageData& imageData);
+  void loadBMP(const std::string& path, ImageData& imageData);
 
 }; // class OBJLoader
 } // namespace al

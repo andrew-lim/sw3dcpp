@@ -6,6 +6,7 @@
 #include <cstdarg>
 #include "OBJLoader.h"
 #include "ImageData.h"
+#include "Bitmap.h"
 #include "lodepng.h"
 
 using namespace al::graphics;
@@ -52,6 +53,26 @@ void OBJLoader::loadPNG(const std::string& path, ImageData& imageData)
   }
   else {
     throw runtime_error("Error loading image");
+  }
+}
+
+void OBJLoader::loadBMP(const std::string& path, ImageData& imageData)
+{
+  Bitmap bmp;
+  if (!bmp.loadFile(path.c_str())) {
+    string error = "Error loading " + path;
+    throw std::runtime_error(error.c_str());
+  }
+
+  uint8_t* imgbytes = new uint8_t[bmp.getWidth() * bmp.getHeight() * 4];
+  uint32_t result = bmp.getBits(imgbytes);
+  if (result) {
+    imageData.copy(imgbytes, bmp.getWidth(), bmp.getHeight());
+  }
+  delete[] imgbytes;
+  if (!result) {
+    string error = "Error loading bitmap " + path;
+    throw std::runtime_error(error.c_str());
   }
 }
 
