@@ -49,8 +49,13 @@ public:
 
   u32& pixel(u32 x, u32 y)
   {
+    const int i = (y*_w+x)*BYTES_PER_PIXEL;
+    u32& pixel = *((u32*)&_data[i]);
+    return pixel;
+
+    // below works but looks pretty hacky
     // const_cast - https://stackoverflow.com/a/856839/1645045
-    return const_cast<u32&>(const_cast<const ImageData*>(this)->pixel(x,y));
+    // return const_cast<u32&>(const_cast<const ImageData*>(this)->pixel(x,y));
   }
 
   void setPixel(u32 x, u32 y, u32 pixel)
