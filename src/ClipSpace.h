@@ -23,6 +23,9 @@ public:
   static std::vector<Triangle>
   clipByNearPlane(const std::vector<Triangle>& triangles);
 
+  static std::vector<Triangle>
+  clipByNearFarPlanes(const std::vector<Triangle>& triangles);
+
   static std::vector<Triangle> 
   clipByAllPlanes(const std::vector<Triangle>& triangles);
 
