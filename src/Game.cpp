@@ -60,7 +60,7 @@ glm::vec4 clipToNDC(glm::vec4 clip)
   glm::vec4 ndc;
   if (w!=0.0) {
     ndc = glm::vec4(
-      clip[0]/w, clip[1]/w, clip[2]/w, 1.0/w
+      clip[0]/w, clip[1]/w, clip[2]/w, w
     );
   }
   return ndc;
@@ -71,6 +71,7 @@ glm::vec4 ndcToWindow(glm::vec4 point, float windowWidth, float windowHeight)
   float xNDC = point[0];
   float yNDC = point[1];
   float zNDC = point[2];
+  float wNDC = point[3];
 
   // Hack to make sure right and bottom edges are really clipped
   // to prevent drawing outside viewport
@@ -80,7 +81,7 @@ glm::vec4 ndcToWindow(glm::vec4 point, float windowWidth, float windowHeight)
   int xWindow = (windowWidth/2*xNDC + windowWidth/2);
   int yWindow = ((-yNDC)*windowHeight/2 + windowHeight/2);
   float zWindow = zNDC;
-  return glm::vec4(xWindow, yWindow, zWindow, 1);
+  return glm::vec4(xWindow, yWindow, zWindow, wNDC);
 }
 
 //------------------------------------------------------------------------------
@@ -131,6 +132,7 @@ private:
     , MIScale256
     , MIClipAll
     , MIClipNearOnly
+    , MIClipNearFar
     , MITexture1 = 1100
     , MIMeshDefault = 1200
     , MIMesh0
@@ -203,8 +205,9 @@ private:
   uint32_t _backgroundColor = 0;
   Camera _camera;
   static const int CLIP_NEAR_ONLY = 0;
-  static const int CLIP_ALL = 1;
-  int _clipMode = CLIP_ALL;
+  static const int CLIP_NEAR_AND_FAR = 1;
+  static const int CLIP_ALL = 2;
+  int _clipMode = CLIP_NEAR_ONLY;
 };
 
 //------------------------------------------------------------------------------
@@ -351,8 +354,10 @@ void GameImpl::createMenus()
   _meshMenu.add("Scale x128", MIScale128);
   _meshMenu.add("Scale x256", MIScale256);
 
-  _clipMenu.add("Clip All Planes", MIClipAll);
   _clipMenu.add("Clip Near Plane Only", MIClipNearOnly);
+  _clipMenu.add("Clip Near & Far", MIClipNearFar);
+  _clipMenu.add("Clip All 6 Planes", MIClipAll);
+
 
   _helpMenu.add("Controls...", MIControls);
   _helpMenu.add("About...", MIAbout);
@@ -611,6 +616,7 @@ LRESULT GameImpl::handleMessage( UINT msg, WPARAM wParam, LPARAM lParam )
         case MIBlueBackground: _backgroundColor=ImageData::makeLittlePixel(64, 145, 250); break;
 
         case MIClipAll: _clipMode = CLIP_ALL; break;
+        case MIClipNearFar: _clipMode = CLIP_NEAR_AND_FAR; break;
         case MIClipNearOnly: _clipMode = CLIP_NEAR_ONLY; break;
 
         case MIControls: showControls(); break;
@@ -688,7 +694,9 @@ LRESULT GameImpl::handleMessage( UINT msg, WPARAM wParam, LPARAM lParam )
       }
       else if (hMenu == _clipMenu) {
         _clipMenu.setMenuItemChecked( MIClipAll, _clipMode==CLIP_ALL);
-        _clipMenu.setMenuItemChecked( MIClipNearOnly, _clipMode==CLIP_NEAR_ONLY);
+        _clipMenu.setMenuItemChecked( MIClipNearOnly,_clipMode==CLIP_NEAR_ONLY);
+        _clipMenu.setMenuItemChecked( MIClipNearFar,
+                                      _clipMode==CLIP_NEAR_AND_FAR);
       }
 
       return 0 ; 
@@ -988,7 +996,7 @@ void GameImpl::drawWorld(HDC hdc)
     float fovydeg = 90.0f;
     float fovyrad = deg2rad(fovydeg);
     float znear = 1.f;
-    float zfar = 100000.f;
+    float zfar = 10000.f;
 
     glm::vec3 moveVector = Camera::xyzToZXY(-_camera.x, -_camera.y, -_camera.z);
     glm::mat4 translate = glm::translate(glm::mat4(1), moveVector);
@@ -1017,10 +1025,19 @@ void GameImpl::drawWorld(HDC hdc)
     trianglesToClip.push_back(triangleToClip);
 
     // Clip the triangle to the frustrum volume
-    vector<Triangle> clippedTriangles = (_clipMode == CLIP_ALL)
-      ? ClipSpace::clipByAllPlanes(trianglesToClip)
-      : ClipSpace::clipByNearPlane(trianglesToClip)
-      ;
+    vector<Triangle> clippedTriangles;
+    switch (_clipMode)
+    {
+      case CLIP_ALL:
+        clippedTriangles = ClipSpace::clipByAllPlanes(trianglesToClip);
+        break;
+      case CLIP_NEAR_AND_FAR:
+        clippedTriangles = ClipSpace::clipByNearFarPlanes(trianglesToClip);
+        break;
+      default:
+        clippedTriangles = ClipSpace::clipByNearPlane(trianglesToClip);
+        break;
+    }
 
     for (size_t i=0; i<clippedTriangles.size(); ++i) {
       Triangle triangle = clippedTriangles[i];
@@ -1096,14 +1113,14 @@ void GameImpl::drawWorld(HDC hdc)
           }
         }
         if (textureData) {
-          float x1 = win1[0], y1 = win1[1];
-          float x2 = win2[0], y2 = win2[1];
-          float x3 = win3[0], y3 = win3[1];
+          float x1 = win1[0], y1 = win1[1], w1 = win1[3];
+          float x2 = win2[0], y2 = win2[1], w2 = win2[3];
+          float x3 = win3[0], y3 = win3[1], w3 = win3[3];
 //          textureData->blit(screenImageData, 100, 100, 0, 0, 100, 100);
            Graphics2D::texturedTriangle(screenImageData,
-                                      x1, y1, triangle.getW(0), triangle.getTexU(0), triangle.getTexV(0),
-                                      x2, y2, triangle.getW(1), triangle.getTexU(1), triangle.getTexV(1),
-                                      x3, y3, triangle.getW(2), triangle.getTexU(2), triangle.getTexV(2),
+                                      x1, y1, w1, triangle.getTexU(0), triangle.getTexV(0),
+                                      x2, y2, w2, triangle.getTexU(1), triangle.getTexV(1),
+                                      x3, y3, w3, triangle.getTexU(2), triangle.getTexV(2),
                                       *textureData,
                                       (_zbufferOn ? &zbuffer:0));
 

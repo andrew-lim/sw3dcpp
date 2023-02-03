@@ -34,15 +34,71 @@ u32& Graphics2D::pixelAtUV(ImageData& imageData, float u, float v)
   return imageData.pixel(x,y);
 }
 
+void clipLeft(int& x0, int& y0, int& x1, int& y1)
+{
+  // no need to clip
+  if (x0>=0 && x1>=0) {
+    return;
+  }
+  float dy = y1 - y0;
+  float dx = x1 - x0;
+
+  // handle divide by zero
+  if (dx==0) {
+    return;
+  }
+
+  // y = mx + c
+  float m = dy / dx;
+  float c = y0 - m*x0;
+  if (x0<0) {
+    x0 = 0;
+    y0 = m*x0 + c;
+  }
+  if (x1<0) {
+    x1 = 0;
+    y1 = m*x1 + c;
+  }
+}
+
+void clipTop(int& x0, int& y0, int& x1, int& y1)
+{
+  // no need to clip
+  if (y0>=0 && y1>=0) {
+    return;
+  }
+  float dy = y1 - y0;
+  float dx = x1 - x0;
+
+  // handle divide by zero
+  if (dx==0) {
+    return;
+  }
+
+  // y = mx + c
+  float m = dy / dx;
+  float c = y0 - m*x0;
+  if (x0<0) {
+    y0 = 0;
+    x0 = (y0-c)/m;
+  }
+  if (x1<0) {
+    y1 = 0;
+    x1 = (y1-c)/m;
+  }
+}
 
 void Graphics2D::bline(ImageData& imageData,
                        int x0, int y0, int x1, int y1, u32 rgba)
 {
+  clipLeft(x0, y0, x1, y1);
+  clipTop(x0, y0, x1, y1);
   int dx = std::abs((int)(x1 - x0));
   int dy = std::abs((int)(y1 - y0));
   int sx = (x0 < x1) ? 1 : -1;
   int sy = (y0 < y1) ? 1 : -1;
   int err = dx - dy;
+//  clipTop(x0, y0, x1, y1);
   while(true) {
     if (x0>=0 && y0>=0 &&
         x0<(int)imageData.width() && y0<(int)imageData.height()) {
@@ -336,7 +392,39 @@ inline void Graphics2D::texturedScanLine(ImageData& imageData,
     for (int x=xstart; x<=xend; x++) {
       const int xsteps = x-leftx;
       const Vertex tex = left + scanlinestep * xsteps;
-      const float z = 1/tex.w();
+      const float z = 1/tex.z();
+      if (zbuffer && z<zbuffer->unsafeGet(x,y)) {
+        zbuffer->unsafeSet(x, y, z);
+      }
+      else {
+        continue;
+      }
+      const float texu = tex.u() * z;
+      const float texv = tex.v() * z;
+      imageData.pixel(x, y) = Graphics2D::pixelAtUV(textureImageData,
+                                                    texu, texv);
+    }
+  }
+}
+
+inline void Graphics2D::texturedScanLine(ImageData& imageData,
+                                         int y,
+                                         const Vertex3f& left,
+                                         const Vertex3f& right,
+                                         ImageData& textureImageData,
+                                         Grid<float>* zbuffer)
+{
+  const int leftx = left.x();
+  const int rightx = right.x();
+  const int dx = rightx - leftx;
+  if (dx) {
+    const Vertex3f scanlinestep = (right-left)/dx;
+    const int xstart = clampZero(leftx);
+    const int xend   = clampSize(rightx, (int)imageData.width()) ;
+    for (int x=xstart; x<=xend; x++) {
+      const int xsteps = x-leftx;
+      const Vertex3f tex = left + scanlinestep * xsteps;
+      const float z = 1/tex.z();
       if (zbuffer && z<zbuffer->unsafeGet(x,y)) {
         zbuffer->unsafeSet(x, y, z);
       }
@@ -359,9 +447,9 @@ texturedTriangle(ImageData& imageData,
                  ImageData& textureImageData,
                  Grid<float>* zbuffer)
 {
-  Vertex top( {x1, y1, 0, 1.0f/w1 }, Vector2f{u1/w1, v1/w1} );
-  Vertex mid( {x2, y2, 0, 1.0f/w2 }, Vector2f{u2/w2, v2/w2} );
-  Vertex bot( {x3, y3, 0, 1.0f/w3 }, Vector2f{u3/w3, v3/w3} );
+  Vertex3f top( {x1, y1, 1.0f/w1}, {u1/w1, v1/w1} );
+  Vertex3f mid( {x2, y2, 1.0f/w2}, {u2/w2, v2/w2} );
+  Vertex3f bot( {x3, y3, 1.0f/w3}, {u3/w3, v3/w3} );
 
   // Sort the points vertically
   if (mid.y() < top.y()) {
@@ -388,10 +476,10 @@ texturedTriangle(ImageData& imageData,
   }
 
   // Top to Bottom Steps
-  const Vertex topbotstep = (bot-top) / dytopbot;
+  const Vertex3f topbotstep = (bot-top) / dytopbot;
 
   // The middle point on the top-bottom edge
-  Vertex mid2 = top + topbotstep * dytopmid;
+  Vertex3f mid2 = top + topbotstep * dytopmid;
 
   // Make sure mid is left of mid2 because we will
   // draw the horizontal scan line from left-to-right
@@ -401,28 +489,28 @@ texturedTriangle(ImageData& imageData,
 
   // Top Half Triangle
   if (dytopmid) {
-    const Vertex leftStep = (mid - top) / dytopmid;
-    const Vertex rightStep = (mid2 - top) / dytopmid;
+    const Vertex3f leftStep = (mid - top) / dytopmid;
+    const Vertex3f rightStep = (mid2 - top) / dytopmid;
     const int ystart = clampZero(topy);
     const int yend   = clampSize(midy, imageData.height());
     for (int y=ystart; y<=yend; y++) {
       const int ysteps = y - topy;
-      const Vertex left = top + leftStep * ysteps;
-      const Vertex right = top + rightStep * ysteps;
+      const Vertex3f left = top + leftStep * ysteps;
+      const Vertex3f right = top + rightStep * ysteps;
       texturedScanLine(imageData, y, left, right, textureImageData, zbuffer);
     }
   }
 
   // Bottom Half Triangle
   if (dymidbot) {
-    const Vertex leftStep = (bot - mid) / dymidbot;
-    const Vertex rightStep = (bot - mid2) / dymidbot;
+    const Vertex3f leftStep = (bot - mid) / dymidbot;
+    const Vertex3f rightStep = (bot - mid2) / dymidbot;
     const int ystart = clampZero(midy);
     const int yend   = clampSize(boty, imageData.height());
     for (int y=ystart; y<=yend; y++) {
       const int ysteps  = y - midy;
-      const Vertex left = mid + leftStep * ysteps;
-      const Vertex right = mid2 + rightStep * ysteps;
+      const Vertex3f left = mid + leftStep * ysteps;
+      const Vertex3f right = mid2 + rightStep * ysteps;
       texturedScanLine(imageData, y, left, right, textureImageData, zbuffer);
     }
   }

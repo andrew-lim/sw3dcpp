@@ -4,6 +4,7 @@
 #include "ImageData.h"
 #include "Grid.h"
 #include "Vertex.h"
+#include "Vertex3f.h"
 
 namespace al { namespace graphics {
 
@@ -67,6 +68,14 @@ public:
                                       const Vertex& right,
                                       ImageData& textureImageData,
                                       Grid<float>* zbuffer=0);
+
+  static inline void texturedScanLine(ImageData& imageData,
+                                      int y,
+                                      const Vertex3f& left,
+                                      const Vertex3f& right,
+                                      ImageData& textureImageData,
+                                      Grid<float>* zbuffer=0);
+
 
   static void texturedTriangle(ImageData& imageData, 
                                float x1, float y1, float w1, float u1, float v1,

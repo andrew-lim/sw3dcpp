@@ -1,5 +1,6 @@
 #include "Tests.h"
 #include "Vertex.h"
+#include "Vector4f.h"
 #include <stdexcept>
 #include <cstdio>
 #include "tiny_obj_loader.h"
@@ -8,6 +9,7 @@
 #include <stdexcept>
 #include "OBJLoader.h"
 #include "Grid.h"
+#include "Vector3f.h"
 
 using namespace al::graphics;
 using namespace std;
@@ -63,8 +65,8 @@ void testVertex()
   
   Vertex lerpab = va.lerp(vb, 0.5);
   printf("lerpab.pos()=%s\n", lerpab.pos().toString().c_str());
-  printf("lerpab.texcoords()=%s\n", lerpab.texcoords().toString().c_str());
-  
+  printf("lerpab.texcoords()=(%f,%f)\n", lerpab.texcoords().x, lerpab.texcoords().y);
+
   Vector4f correctPos(0, 0.5, 0);
   Vector2f correctTex(0, 0.5);
   

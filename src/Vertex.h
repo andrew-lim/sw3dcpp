@@ -37,8 +37,8 @@ public:
 
   }
   
-  Vertex(const Vector4f& pos=Vector4f::zero(), 
-         const Vector2f& texcoords=Vector2f::zero())
+  Vertex(const Vector4f& pos=Vector4f(),
+         const Vector2f& texcoords=Vector2f())
   : _pos(pos)
   , _texcoords(texcoords)
   {
