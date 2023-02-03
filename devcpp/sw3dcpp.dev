@@ -29,7 +29,7 @@ IncludeVersionInfo=0
 SupportXPThemes=0
 CompilerSet=3
 CompilerSettings=0;0;0;0;0;0;0;1;0;0;0;0;0;0;0;0;0;0;0;0;0;0;8;0;0;0
-UnitCount=35
+UnitCount=37
 
 [VersionInfo]
 Major=1
@@ -390,8 +390,8 @@ Priority=1000
 OverrideBuildCmd=0
 BuildCmd=
 
-[Unit36]
-FileName=..\src\Camera.h
+[Unit20]
+FileName=..\src\Window.cpp
 CompileCpp=1
 Folder=
 Compile=1
@@ -400,8 +400,18 @@ Priority=1000
 OverrideBuildCmd=0
 BuildCmd=
 
-[Unit20]
-FileName=..\src\Window.cpp
+[Unit36]
+FileName=..\src\Vector3f.h
+CompileCpp=1
+Folder=
+Compile=1
+Link=1
+Priority=1000
+OverrideBuildCmd=0
+BuildCmd=
+
+[Unit37]
+FileName=..\src\Vertex3f.h
 CompileCpp=1
 Folder=
 Compile=1
