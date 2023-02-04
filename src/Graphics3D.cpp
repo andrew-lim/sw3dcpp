@@ -1,4 +1,4 @@
-#include "Graphics2D.h"
+#include "Graphics3D.h"
 #include <cmath>
 #include "Vertex.h"
 using namespace al::graphics;
@@ -6,7 +6,7 @@ using namespace std;
 
 // Gets the pixel from an ImageData bitmap by converting UV coordinates
 // to bitmap coordinates
-u32& Graphics2D::pixelAtUV(ImageData& imageData, float u, float v)
+u32& Graphics3D::pixelAtUV(ImageData& imageData, float u, float v)
 {
   // UV coordinates start from the bottom-left of a texture
   // But ImageData coordinates start from the top-left
@@ -88,7 +88,7 @@ void clipTop(int& x0, int& y0, int& x1, int& y1)
   }
 }
 
-void Graphics2D::bline(ImageData& imageData,
+void Graphics3D::bline(ImageData& imageData,
                        int x0, int y0, int x1, int y1, u32 rgba)
 {
   clipLeft(x0, y0, x1, y1);
@@ -112,16 +112,16 @@ void Graphics2D::bline(ImageData& imageData,
   }
 }
 
-void Graphics2D::triangleWire(ImageData& imageData,
+void Graphics3D::triangleWire(ImageData& imageData,
                               int x1, int y1, int x2, int y2, int x3, int y3,
                               u32 rgba)
 {
-  Graphics2D::bline(imageData, x1, y1, x2, y2, rgba);
-  Graphics2D::bline(imageData, x2, y2, x3, y3, rgba);
-  Graphics2D::bline(imageData, x3, y3, x1, y1, rgba);
+  Graphics3D::bline(imageData, x1, y1, x2, y2, rgba);
+  Graphics3D::bline(imageData, x2, y2, x3, y3, rgba);
+  Graphics3D::bline(imageData, x3, y3, x1, y1, rgba);
 }
 
-void Graphics2D::fillTriangle(ImageData& imageData,
+void Graphics3D::fillTriangle(ImageData& imageData,
                               int x1, int y1, int x2, int y2, int x3, int y3,
                               u32 rgba)
 {
@@ -213,7 +213,7 @@ void Graphics2D::fillTriangle(ImageData& imageData,
   }
 }
 
-void Graphics2D::affineTriangle(ImageData& imageData,
+void Graphics3D::affineTriangle(ImageData& imageData,
                                 int x1, int y1, float u1, float v1,
                                 int x2, int y2, float u2, float v2,
                                 int x3, int y3, float u3, float v3,
@@ -313,7 +313,7 @@ void Graphics2D::affineTriangle(ImageData& imageData,
           const int xsteps = x-left.x();
           const float u = left.u() + xsteps * ustep;
           const float v = left.v() + xsteps * vstep;
-          const uint32_t pixel = Graphics2D::pixelAtUV(textureImageData, u, v);
+          const uint32_t pixel = Graphics3D::pixelAtUV(textureImageData, u, v);
           imageData.pixel(x, y) = pixel;
         }
       }
@@ -367,7 +367,7 @@ void Graphics2D::affineTriangle(ImageData& imageData,
           const int xsteps = x-left.x();
           const float u = left.u() + xsteps * ustep;
           const float v = left.v() + xsteps * vstep;
-          const uint32_t pixel = Graphics2D::pixelAtUV(textureImageData, u, v);
+          const uint32_t pixel = Graphics3D::pixelAtUV(textureImageData, u, v);
           imageData.pixel(x, y) = pixel;
         }
       }
@@ -375,7 +375,7 @@ void Graphics2D::affineTriangle(ImageData& imageData,
   }
 } // affineTriangle
 
-inline void Graphics2D::texturedScanLine(ImageData& imageData,
+inline void Graphics3D::texturedScanLine(ImageData& imageData,
                                          int y,
                                          const Vertex& left,
                                          const Vertex& right,
@@ -401,13 +401,13 @@ inline void Graphics2D::texturedScanLine(ImageData& imageData,
       }
       const float texu = tex.u() * z;
       const float texv = tex.v() * z;
-      imageData.pixel(x, y) = Graphics2D::pixelAtUV(textureImageData,
+      imageData.pixel(x, y) = Graphics3D::pixelAtUV(textureImageData,
                                                     texu, texv);
     }
   }
 }
 
-inline void Graphics2D::texturedScanLine(ImageData& imageData,
+inline void Graphics3D::texturedScanLine(ImageData& imageData,
                                          int y,
                                          const Vertex3f& left,
                                          const Vertex3f& right,
@@ -433,13 +433,13 @@ inline void Graphics2D::texturedScanLine(ImageData& imageData,
       }
       const float texu = tex.u() * z;
       const float texv = tex.v() * z;
-      imageData.pixel(x, y) = Graphics2D::pixelAtUV(textureImageData,
+      imageData.pixel(x, y) = Graphics3D::pixelAtUV(textureImageData,
                                                     texu, texv);
     }
   }
 }
 
-void Graphics2D::
+void Graphics3D::
 texturedTriangle(ImageData& imageData,
                  float x1, float y1, float w1, float u1, float v1,
                  float x2, float y2, float w2, float u2, float v2,

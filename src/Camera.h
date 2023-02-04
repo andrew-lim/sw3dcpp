@@ -4,16 +4,6 @@
 
 namespace al { namespace graphics {
 
-float deg2rad(float deg)
-{
-  return deg * (M_PI / 180.0);
-}
-
-float rad2deg(float rad)
-{
-  return rad * (180.0 / M_PI);
-}
-
 class Camera
 {
 public:

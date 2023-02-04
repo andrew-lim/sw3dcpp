@@ -10,7 +10,7 @@
 #include "Bitmap.h"
 #include "BufferDC.h"
 #include "ImageData.h"
-#include "Graphics2D.h"
+#include "Graphics3D.h"
 #include "Vertex.h"
 #include "Triangle.h"
 #include <glm/vec3.hpp> // glm::vec3
@@ -38,7 +38,7 @@ using namespace glm;
 #define CLIENT_WIDTH 848
 #define CLIENT_HEIGHT 480
 #define MOVE_SPEED 4
-#define ROT_SPEED (deg2rad(2))
+#define ROT_SPEED (G3D::deg2rad(2))
 #define WM_MM_TIMER WM_USER + 1    //  Custom message sent by the timer.
 const int DESIRED_FPS = 60;
 const int UPDATE_INTERVAL = 1000/DESIRED_FPS;
@@ -939,8 +939,8 @@ void GameImpl::updateGame()
   _camera.z = newZ;
 
   // Vertical Look
-  const float MAX_LOOK_UP = deg2rad(55);
-  const float MAX_LOOK_DOWN = deg2rad(-55);
+  const float MAX_LOOK_UP = G3D::deg2rad(55);
+  const float MAX_LOOK_DOWN = G3D::deg2rad(-55);
   if (lookup) {
     _camera.vrot += _camera.rotSpeed * timeBasedFactor;
     if (_camera.vrot > MAX_LOOK_UP) {
@@ -986,15 +986,15 @@ void GameImpl::drawWorld(HDC hdc)
   _mesh = _scaledMesh;
   for (size_t i=0; i<_mesh.size(); i++) {
     Triangle& t = _mesh[i];
-    t.rotateX(deg2rad(_xrot));
-    t.rotateY(deg2rad(_yrot));
+    t.rotateX(G3D::deg2rad(_xrot));
+    t.rotateY(G3D::deg2rad(_yrot));
   }
 
   for (size_t i=0; i<_mesh.size(); ++i) {
     Triangle* t = &_mesh[i];
 
     float fovydeg = 90.0f;
-    float fovyrad = deg2rad(fovydeg);
+    float fovyrad = G3D::deg2rad(fovydeg);
     float znear = 1.f;
     float zfar = 10000.f;
 
@@ -1048,7 +1048,7 @@ void GameImpl::drawWorld(HDC hdc)
 
       float xprod = 0;
       if (_backfaceCullingOn) {
-        if ((xprod=Graphics2D::crossProduct2D<glm::vec4>(ndc1, ndc2, ndc3))<0) {
+        if ((xprod=Graphics3D::crossProduct2D<glm::vec4>(ndc1, ndc2, ndc3))<0) {
           continue;
         }
       }
@@ -1078,7 +1078,7 @@ void GameImpl::drawWorld(HDC hdc)
       }
 
       if (_drawType==DrawSolid) {
-        Graphics2D::fillTriangle(screenImageData,
+        Graphics3D::fillTriangle(screenImageData,
                                  win1[0], win1[1],
                                  win2[0], win2[1],
                                  win3[0], win3[1],
@@ -1095,7 +1095,7 @@ void GameImpl::drawWorld(HDC hdc)
             }
           }
         }
-        Graphics2D::affineTriangle(screenImageData,
+        Graphics3D::affineTriangle(screenImageData,
                                    win1[0], win1[1], triangle.getTexU(0), triangle.getTexV(0),
                                    win2[0], win2[1], triangle.getTexU(1), triangle.getTexV(1),
                                    win3[0], win3[1], triangle.getTexU(2), triangle.getTexV(2),
@@ -1117,7 +1117,7 @@ void GameImpl::drawWorld(HDC hdc)
           float x2 = win2[0], y2 = win2[1], w2 = win2[3];
           float x3 = win3[0], y3 = win3[1], w3 = win3[3];
 //          textureData->blit(screenImageData, 100, 100, 0, 0, 100, 100);
-           Graphics2D::texturedTriangle(screenImageData,
+           Graphics3D::texturedTriangle(screenImageData,
                                       x1, y1, w1, triangle.getTexU(0), triangle.getTexV(0),
                                       x2, y2, w2, triangle.getTexU(1), triangle.getTexV(1),
                                       x3, y3, w3, triangle.getTexU(2), triangle.getTexV(2),
@@ -1132,7 +1132,7 @@ void GameImpl::drawWorld(HDC hdc)
       }
 
       if (_drawWireframe) {
-        Graphics2D::triangleWire(screenImageData,
+        Graphics3D::triangleWire(screenImageData,
                                  win1[0], win1[1],
                                  win2[0], win2[1],
                                  win3[0], win3[1],

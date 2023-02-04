@@ -5,8 +5,8 @@ CPP      = g++.exe
 CC       = gcc.exe
 WINDRES  = windres.exe
 RES      = sw3dcpp_private.res
-OBJ      = ../src/Bitmap.o ../src/BufferDC.o ../src/Game.o ../src/Graphics2D.o ../src/ImageData.o ../src/main.o ../src/Menu.o ../src/Tests.o ../src/Triangle.o ../src/Window.o ../src/ClipSpace.o ../src/tiny_obj_loader.o ../src/OBJLoader.o ../src/FileDialog.o ../src/lodepng.o $(RES)
-LINKOBJ  = ../src/Bitmap.o ../src/BufferDC.o ../src/Game.o ../src/Graphics2D.o ../src/ImageData.o ../src/main.o ../src/Menu.o ../src/Tests.o ../src/Triangle.o ../src/Window.o ../src/ClipSpace.o ../src/tiny_obj_loader.o ../src/OBJLoader.o ../src/FileDialog.o ../src/lodepng.o $(RES)
+OBJ      = ../src/Bitmap.o ../src/BufferDC.o ../src/Game.o ../src/ImageData.o ../src/main.o ../src/Menu.o ../src/Tests.o ../src/Triangle.o ../src/Window.o ../src/ClipSpace.o ../src/tiny_obj_loader.o ../src/OBJLoader.o ../src/FileDialog.o ../src/lodepng.o ../src/Graphics3D.o $(RES)
+LINKOBJ  = ../src/Bitmap.o ../src/BufferDC.o ../src/Game.o ../src/ImageData.o ../src/main.o ../src/Menu.o ../src/Tests.o ../src/Triangle.o ../src/Window.o ../src/ClipSpace.o ../src/tiny_obj_loader.o ../src/OBJLoader.o ../src/FileDialog.o ../src/lodepng.o ../src/Graphics3D.o $(RES)
 LIBS     = -L"C:/Program Files (x86)/Embarcadero/Dev-Cpp/TDM-GCC-64/x86_64-w64-mingw32/lib32" -static-libgcc -mwindows -lwinmm -mconsole -m32
 INCS     = -I"C:/Program Files (x86)/Embarcadero/Dev-Cpp/TDM-GCC-64/include" -I"C:/Program Files (x86)/Embarcadero/Dev-Cpp/TDM-GCC-64/x86_64-w64-mingw32/include" -I"C:/Program Files (x86)/Embarcadero/Dev-Cpp/TDM-GCC-64/lib/gcc/x86_64-w64-mingw32/9.2.0/include" -I"C:/Projects/cpp/sw3dcpp/src"
 CXXINCS  = -I"C:/Program Files (x86)/Embarcadero/Dev-Cpp/TDM-GCC-64/include" -I"C:/Program Files (x86)/Embarcadero/Dev-Cpp/TDM-GCC-64/x86_64-w64-mingw32/include" -I"C:/Program Files (x86)/Embarcadero/Dev-Cpp/TDM-GCC-64/lib/gcc/x86_64-w64-mingw32/9.2.0/include" -I"C:/Program Files (x86)/Embarcadero/Dev-Cpp/TDM-GCC-64/lib/gcc/x86_64-w64-mingw32/9.2.0/include/c++" -I"C:/Projects/cpp/sw3dcpp/src"
@@ -33,9 +33,6 @@ $(BIN): $(OBJ)
 
 ../src/Game.o: ../src/Game.cpp
 	$(CPP) -c ../src/Game.cpp -o ../src/Game.o $(CXXFLAGS)
-
-../src/Graphics2D.o: ../src/Graphics2D.cpp
-	$(CPP) -c ../src/Graphics2D.cpp -o ../src/Graphics2D.o $(CXXFLAGS)
 
 ../src/ImageData.o: ../src/ImageData.cpp
 	$(CPP) -c ../src/ImageData.cpp -o ../src/ImageData.o $(CXXFLAGS)
@@ -69,6 +66,9 @@ $(BIN): $(OBJ)
 
 ../src/lodepng.o: ../src/lodepng.cpp
 	$(CPP) -c ../src/lodepng.cpp -o ../src/lodepng.o $(CXXFLAGS)
+
+../src/Graphics3D.o: ../src/Graphics3D.cpp
+	$(CPP) -c ../src/Graphics3D.cpp -o ../src/Graphics3D.o $(CXXFLAGS)
 
 sw3dcpp_private.res: sw3dcpp_private.rc ../src/resource.rc
 	$(WINDRES) -i sw3dcpp_private.rc -F pe-i386 --input-format=rc -o sw3dcpp_private.res -O coff 

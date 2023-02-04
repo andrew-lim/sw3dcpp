@@ -1,5 +1,5 @@
-#ifndef ANDREW_LIM_GRAPHICS2D_H
-#define ANDREW_LIM_GRAPHICS2D_H
+#ifndef ANDREW_LIM_Graphics3D_H
+#define ANDREW_LIM_Graphics3D_H
 
 #include "ImageData.h"
 #include "Grid.h"
@@ -8,19 +8,14 @@
 
 namespace al { namespace graphics {
 
-inline static int clampZero(int v)
-{
-  return v<0 ? 0 : v;
-}
-
-inline static int clampSize(int v, int size)
-{
-  return v>=size ? size-1 : v;
-}
-
-class Graphics2D
+class Graphics3D
 {
 public:
+
+  static float deg2rad(float deg) { return deg * (M_PI / 180.0); }
+  static float rad2deg(float rad) { return rad * (180.0 / M_PI); }
+  inline static int clampZero(int v) { return v<0 ? 0 : v; }
+  inline static int clampSize(int v, int size) { return v>=size ? size-1 : v; }
 
   static u32& pixelAtUV(ImageData& imageData, float u, float v);
 
@@ -86,6 +81,8 @@ public:
 
 
 };
+
+typedef Graphics3D G3D;
 
 }}
 #endif
