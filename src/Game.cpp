@@ -504,6 +504,7 @@ void GameImpl::showControls()
 {
   MessageBox(hwnd, TEXT("Camera Controls:\n")
                    TEXT("WASD - move forwards, backwards and strafe sideways\n")
+                   TEXT("Q/E - move down/up\n")
                    TEXT("Arrow Keys - rotate camera\n")
                    TEXT("R - back to origin"), TEXT("Controls"), MB_OK);
 }
@@ -706,10 +707,14 @@ LRESULT GameImpl::handleMessage( UINT msg, WPARAM wParam, LPARAM lParam )
     {
       PAINTSTRUCT ps ;
       HDC hDC = BeginPaint( hwnd, &ps ) ;
-      drawWorld(bufferDC);
-      drawFPS(bufferDC);
-      bufferDC.draw( hDC );
-      
+      if (_fpsOn || _showFileName) {
+        drawWorld(bufferDC);
+        drawFPS(bufferDC);
+        bufferDC.draw( hDC );
+      }
+      else {
+        drawWorld(hDC);
+      }
       EndPaint( hwnd, &ps ) ;
       return 0 ;
     }
