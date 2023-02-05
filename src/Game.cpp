@@ -1001,7 +1001,7 @@ void GameImpl::drawWorld(HDC hdc)
     float fovydeg = 90.0f;
     float fovyrad = G3D::deg2rad(fovydeg);
     float znear = 1.f;
-    float zfar = 10000.f;
+    float zfar = 1000.f;
 
     glm::vec3 moveVector = Camera::xyzToZXY(-_camera.x, -_camera.y, -_camera.z);
     glm::mat4 translate = glm::translate(glm::mat4(1), moveVector);
