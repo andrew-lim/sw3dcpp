@@ -375,38 +375,6 @@ void Graphics3D::affineTriangle(ImageData& imageData,
 
 inline void Graphics3D::texturedScanLine(ImageData& imageData,
                                          int y,
-                                         const Vertex& left,
-                                         const Vertex& right,
-                                         ImageData& textureImageData,
-                                         Grid<float>* zbuffer)
-{
-  const int leftx = left.x();
-  const int rightx = right.x();
-  const int dx = rightx - leftx;
-  if (dx) {
-    const Vertex scanlinestep = (right-left)/dx;
-    const int xstart = clampZero(leftx);
-    const int xend   = clampSize(rightx, (int)imageData.width()) ;
-    for (int x=xstart; x<=xend; x++) {
-      const int xsteps = x-leftx;
-      const Vertex tex = left + scanlinestep * xsteps;
-      const float z = 1/tex.z();
-      if (zbuffer && z<zbuffer->unsafeGet(x,y)) {
-        zbuffer->unsafeSet(x, y, z);
-      }
-      else {
-        continue;
-      }
-      const float texu = tex.u() * z;
-      const float texv = tex.v() * z;
-      imageData.pixel(x, y) = Graphics3D::pixelAtUV(textureImageData,
-                                                    texu, texv);
-    }
-  }
-}
-
-inline void Graphics3D::texturedScanLine(ImageData& imageData,
-                                         int y,
                                          const Vertex3f& left,
                                          const Vertex3f& right,
                                          ImageData& textureImageData,

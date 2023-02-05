@@ -84,15 +84,8 @@ public:
   static void affineTriangle(ImageData& imageData, 
                              int x1, int y1, float u1, float v1,
                              int x2, int y2, float u2, float v2,
-                             int x3, int y3, float u3, float v3, 
+                             int x3, int y3, float u3, float v3,
                              ImageData& textureImageData);
-
-  static inline void texturedScanLine(ImageData& imageData,
-                                      int y,
-                                      const Vertex& left,
-                                      const Vertex& right,
-                                      ImageData& textureImageData,
-                                      Grid<float>* zbuffer=0);
 
   static inline void texturedScanLine(ImageData& imageData,
                                       int y,
@@ -100,7 +93,6 @@ public:
                                       const Vertex3f& right,
                                       ImageData& textureImageData,
                                       Grid<float>* zbuffer=0);
-
 
   static void texturedTriangle(ImageData& imageData, 
                                float x1, float y1, float w1, float u1, float v1,
