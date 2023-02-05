@@ -16,8 +16,38 @@ public:
   static float rad2deg(float rad) { return rad * (180.0 / M_PI); }
   inline static int clampZero(int v) { return v<0 ? 0 : v; }
   inline static int clampSize(int v, int size) { return v>=size ? size-1 : v; }
+  static bool clipByScreenLeft(int& x0, int& y0, int& x1, int& y1);
+  static bool clipByScreenTop(int& x0, int& y0, int& x1, int& y1);
 
-  static u32& pixelAtUV(ImageData& imageData, float u, float v);
+  // Gets the pixel from an ImageData bitmap by converting UV coordinates
+  // to bitmap coordinates
+  static u32& pixelAtUV(ImageData& imageData, float u, float v)
+  {
+    // UV coordinates start from the bottom-left of a texture
+    // But ImageData coordinates start from the top-left
+    // https://stackoverflow.com/a/33324409/1645045
+    v = 1.0f-v;
+
+    const int imageW = (int) imageData.width();
+    const int imageH = (int) imageData.height();
+
+    int x = (u*imageW);
+    int y = (v*imageH);
+
+    // Wrap out of bounds coordinates
+    x = x % imageW;
+    y = y % imageH;
+
+    // Wrap negative coordinates
+    if (x<0) {
+      x = imageW - std::abs(x);
+    }
+    if (y<0) {
+      y = imageH - std::abs(y);
+    }
+
+    return imageData.pixel(x,y);
+  }
 
     /**
    * Calculates the cross-product from 3 vertices but ignores the Z component

@@ -4,53 +4,29 @@
 using namespace al::graphics;
 using namespace std;
 
-// Gets the pixel from an ImageData bitmap by converting UV coordinates
-// to bitmap coordinates
-u32& Graphics3D::pixelAtUV(ImageData& imageData, float u, float v)
-{
-  // UV coordinates start from the bottom-left of a texture
-  // But ImageData coordinates start from the top-left
-  // https://stackoverflow.com/a/33324409/1645045
-  v = 1.0f-v;
-
-  const int imageW = (int) imageData.width();
-  const int imageH = (int) imageData.height();
-
-  int x = (u*imageW);
-  int y = (v*imageH);
-
-  // Wrap out of bounds coordinates
-  x = x % imageW;
-  y = y % imageH;
-
-  // Wrap negative coordinates
-  if (x<0) {
-    x = imageW - std::abs(x);
-  }
-  if (y<0) {
-    y = imageH - std::abs(y);
-  }
-
-  return imageData.pixel(x,y);
-}
-
-void clipLeft(int& x0, int& y0, int& x1, int& y1)
+bool Graphics3D::clipByScreenLeft(int& x0, int& y0, int& x1, int& y1)
 {
   // no need to clip
   if (x0>=0 && x1>=0) {
-    return;
+    return true;
   }
-  float dy = y1 - y0;
-  float dx = x1 - x0;
 
-  // handle divide by zero
+  // line lies outside, cannot be clipped
+  if (x0<0 && x1<0) {
+    return false;
+  }
+
+  const float dx = x1 - x0;
+
+  // straight vertical line that is >=0
   if (dx==0) {
-    return;
+    return true;
   }
 
   // y = mx + c
-  float m = dy / dx;
-  float c = y0 - m*x0;
+  const float dy = y1 - y0;
+  const float m = dy / dx;
+  const float c = y0 - m*x0;
   if (x0<0) {
     x0 = 0;
     y0 = m*x0 + c;
@@ -59,52 +35,74 @@ void clipLeft(int& x0, int& y0, int& x1, int& y1)
     x1 = 0;
     y1 = m*x1 + c;
   }
+  return true;
 }
 
-void clipTop(int& x0, int& y0, int& x1, int& y1)
+bool Graphics3D::clipByScreenTop(int& x0, int& y0, int& x1, int& y1)
 {
   // no need to clip
   if (y0>=0 && y1>=0) {
-    return;
+    return true;
   }
-  float dy = y1 - y0;
-  float dx = x1 - x0;
 
-  // handle divide by zero
-  if (dx==0) {
-    return;
+  // line lies outside
+  if (y0<0 && y1<0) {
+    return false;
   }
+
+  const float dy = y1 - y0;
+  const float dx = x1 - x0;
 
   // y = mx + c
-  float m = dy / dx;
-  float c = y0 - m*x0;
-  if (x0<0) {
+  if (y0<0) {
     y0 = 0;
-    x0 = (y0-c)/m;
+    if (dx != 0) {
+      const float m = dy / dx;
+      const float c = y0 - m*x0;
+      x0 = (y0-c)/m;
+    }
   }
-  if (x1<0) {
+  if (y1<0) {
     y1 = 0;
-    x1 = (y1-c)/m;
+    if (dx != 0) {
+      const float m = dy / dx;
+      const float c = y1 - m*x1;
+      x1 = (y1-c)/m;
+    }
   }
+  return true;
 }
 
 void Graphics3D::bline(ImageData& imageData,
                        int x0, int y0, int x1, int y1, u32 rgba)
 {
-  clipLeft(x0, y0, x1, y1);
-  clipTop(x0, y0, x1, y1);
+  const int imageW = (int) imageData.width();
+  const int imageH = (int) imageData.height();
+
+  if (x1 < x0) {
+    std::swap(x0, x1);
+    std::swap(y0, y1);
+  }
+  if (!clipByScreenLeft(x0, y0, x1, y1)) {
+    return;
+  }
+  if (!clipByScreenTop(x0, y0, x1, y1)) {
+    return;
+  }
+
   int dx = std::abs((int)(x1 - x0));
   int dy = std::abs((int)(y1 - y0));
   int sx = (x0 < x1) ? 1 : -1;
   int sy = (y0 < y1) ? 1 : -1;
   int err = dx - dy;
-//  clipTop(x0, y0, x1, y1);
+
   while(true) {
-    if (x0>=0 && y0>=0 &&
-        x0<(int)imageData.width() && y0<(int)imageData.height()) {
+    if (x0>=imageW && y0>=imageH) {
+      break;
+    }
+    if (x0<imageW && y0<imageH) {
       imageData.pixel(x0, y0) = rgba;
     }
-
     if ((x0 == x1) && (y0 == y1)) break;
     int e2 = 2*err;
     if (e2 > -dy) { err -= dy; x0  += sx; }
