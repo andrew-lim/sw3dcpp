@@ -354,9 +354,9 @@ void GameImpl::createMenus()
   _meshMenu.add("Scale x128", MIScale128);
   _meshMenu.add("Scale x256", MIScale256);
 
-  _clipMenu.add("Clip Near Plane Only", MIClipNearOnly);
-  _clipMenu.add("Clip Near & Far", MIClipNearFar);
-  _clipMenu.add("Clip All 6 Planes", MIClipAll);
+  _clipMenu.add("Near Plane Only", MIClipNearOnly);
+  _clipMenu.add("Near && Far Planes", MIClipNearFar);
+  _clipMenu.add("All 6 Planes", MIClipAll);
 
 
   _helpMenu.add("Controls...", MIControls);
