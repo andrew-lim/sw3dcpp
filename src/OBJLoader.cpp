@@ -95,7 +95,6 @@ void OBJLoader::load(const std::string& path, float scale)
         msg += reader.Error();
         throw std::runtime_error(msg);
     }
-    exit(1);
   }
 
   if (!reader.Warning().empty()) {
