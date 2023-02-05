@@ -59,7 +59,10 @@ bool Graphics3D::clipByScreenTop(int& x0, int& y0, int& x1, int& y1)
     if (dx != 0) {
       const float m = dy / dx;
       const float c = y0 - m*x0;
-      x0 = (y0-c)/m;
+      if (m != 0) {
+        x0 = (y0-c)/m;
+      }
+
     }
   }
   if (y1<0) {
@@ -67,7 +70,9 @@ bool Graphics3D::clipByScreenTop(int& x0, int& y0, int& x1, int& y1)
     if (dx != 0) {
       const float m = dy / dx;
       const float c = y1 - m*x1;
-      x1 = (y1-c)/m;
+      if (m != 0) {
+        x1 = (y1-c)/m;
+      }
     }
   }
   return true;
@@ -100,7 +105,7 @@ void Graphics3D::bline(ImageData& imageData,
     if (x0>=imageW && y0>=imageH) {
       break;
     }
-    if (x0<imageW && y0<imageH) {
+    if (x0>=0 && y0>=0 && x0<imageW && y0<imageH) {
       imageData.pixel(x0, y0) = rgba;
     }
     if ((x0 == x1) && (y0 == y1)) break;
