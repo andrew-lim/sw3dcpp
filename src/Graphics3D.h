@@ -107,7 +107,6 @@ public:
                                ImageData& textureImageData,
                                Grid<float>* zbuffer=0);
 
-
 };
 
 typedef Graphics3D G3D;

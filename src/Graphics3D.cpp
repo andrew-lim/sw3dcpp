@@ -62,7 +62,6 @@ bool Graphics3D::clipByScreenTop(int& x0, int& y0, int& x1, int& y1)
       if (m != 0) {
         x0 = (y0-c)/m;
       }
-
     }
   }
   if (y1<0) {
@@ -128,24 +127,24 @@ void Graphics3D::fillTriangle(ImageData& imageData,
                               int x1, int y1, int x2, int y2, int x3, int y3,
                               u32 rgba)
 {
-  Vertex2f top(x1, y1);
-  Vertex2f mid(x2, y2);
-  Vertex2f bot(x3, y3);
+  Vector2f top(x1, y1);
+  Vector2f mid(x2, y2);
+  Vector2f bot(x3, y3);
 
   // Sort the points vertically
-  if (mid.y() < top.y()) {
+  if (mid.y < top.y) {
     std::swap(mid, top);
   }
-  if (bot.y() < top.y()) {
+  if (bot.y < top.y) {
     std::swap(bot, top);
   }
-  if (bot.y() < mid.y()) {
+  if (bot.y < mid.y) {
     std::swap(bot, mid);
   }
 
-  const float dytopmid = mid.y() - top.y();  // Top to Mid
-  const float dytopbot = bot.y() - top.y(); // Top to Bottom
-  const float dymidbot = bot.y() - mid.y();  // Mid to Bottom
+  const int dytopmid = mid.y - top.y;  // Top to Mid
+  const int dytopbot = bot.y - top.y; // Top to Bottom
+  const int dymidbot = bot.y - mid.y;  // Mid to Bottom
 
   // Check if triangle has 0 height
   if (dytopbot == 0.0) {
@@ -153,38 +152,32 @@ void Graphics3D::fillTriangle(ImageData& imageData,
   }
 
   // Top to Bottom Steps
-  const Vertex2f topbotstep((bot.x() - top.x()) / std::abs(dytopbot));
+  const Vector2f topbotstep((bot.x - top.x) / dytopbot);
 
   // The middle point on the top-bottom line
-  Vertex2f mid2(
-    top.x()+dytopmid*topbotstep.x(),
-    top.y()+dytopmid
+  Vector2f mid2(
+    top.x+dytopmid*topbotstep.x,
+    top.y+dytopmid
   );
 
   // Make sure mid is left of mid2 because we will
   // draw the horizontal scan line from left-to-right
-  if (mid.x() > mid2.x()) {
+  if (mid.x > mid2.x) {
     std::swap(mid, mid2);
   }
 
   // Top Half Triangle
   if (dytopmid) {
-    const Vertex2f leftStep((mid.x() - top.x()) / std::abs(dytopmid));
-    const Vertex2f rightStep((mid2.x() - top.x()) / std::abs(dytopmid));
-    const int ystart = std::max(0, (int)top.y());
-    const int yend = std::min((int)imageData.height()-1, (int)mid.y());
+    const Vector2f leftStep((mid.x - top.x) / dytopmid);
+    const Vector2f rightStep((mid2.x - top.x) / dytopmid);
+    const int ystart = std::max(0, (int)top.y);
+    const int yend = std::min((int)imageData.height()-1, (int)mid.y);
     for (int y=ystart; y<=yend; y++) {
-      const int ysteps = y-top.y();
-
-      // Left Point
-      const Vertex2f left(top.x()+ysteps*leftStep.x());
-
-      // Right Point
-      const Vertex2f right(top.x()+ysteps*rightStep.x());
-
-      // Draw the horizontal line between left and right
-      const int xstart = std::max(0, (int)left.x());
-      const int xend = std::min((int)right.x(), (int)imageData.width());
+      const int ysteps = y-top.y;
+      const Vector2f left(top.x+ysteps*leftStep.x);
+      const Vector2f right(top.x+ysteps*rightStep.x);
+      const int xstart = std::max(0, (int)left.x);
+      const int xend = std::min((int)right.x, (int)imageData.width());
       for (int x=xstart; x<xend; x++) {
         imageData.pixel(x, y) = rgba;
       }
@@ -193,22 +186,16 @@ void Graphics3D::fillTriangle(ImageData& imageData,
 
   // Bottom Half Triangle
   if (dymidbot) {
-    const Vertex2f leftStep((bot.x() - mid.x()) / std::abs(dymidbot));
-    const Vertex2f rightStep((bot.x() - mid2.x()) / std::abs(dymidbot));
-    const int ystart = std::max(0, (int)mid.y());
-    const int yend = std::min((int)imageData.height()-1, (int)bot.y());
+    const Vector2f leftStep((bot.x - mid.x) / dymidbot);
+    const Vector2f rightStep((bot.x - mid2.x) / dymidbot);
+    const int ystart = std::max(0, (int)mid.y);
+    const int yend = std::min((int)imageData.height()-1, (int)bot.y);
     for (int y=ystart; y<=yend; y++) {
-      const int ysteps  = y - mid.y();
-
-      // Left Point
-      const Vertex2f left(mid.x()+ysteps*leftStep.x());
-
-      // Right Point
-      const Vertex2f right(mid2.x()+ysteps*rightStep.x());
-
-      // Draw the horizontal line between left and right
-      const int xstart = std::max(0, (int)left.x());
-      const int xend = std::min((int)right.x(), (int)imageData.width());
+      const int ysteps  = y - mid.y;
+      const Vector2f left(mid.x+ysteps*leftStep.x);
+      const Vector2f right(mid2.x+ysteps*rightStep.x);
+      const int xstart = std::max(0, (int)left.x);
+      const int xend = std::min((int)right.x, (int)imageData.width());
       for (int x=xstart; x<xend; x++) {
         imageData.pixel(x, y) = rgba;
       }
@@ -262,12 +249,16 @@ void Graphics3D::affineTriangle(ImageData& imageData,
     std::swap(bot, mid);
   }
 
-  const float dytopmid = mid.y() - top.y();  // Top to Mid
-  const float dytopbot = bot.y() - top.y(); // Top to Bottom
-  const float dymidbot = bot.y() - mid.y();  // Mid to Bottom
+  const int topy = top.y();
+  const int midy = mid.y();
+  const int boty = bot.y();
+
+  const int dytopmid = midy - topy; // Top to Mid Distance
+  const int dytopbot = boty - topy; // Top to Bottom Distance
+  const int dymidbot = boty - midy; // Mid to Bottom Distance
 
   // Check if triangle has 0 height
-  if (dytopbot == 0.0f) {
+  if (!dytopbot) {
     return;
   }
 
