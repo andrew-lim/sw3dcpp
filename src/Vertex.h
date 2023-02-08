@@ -1,237 +1,88 @@
 #ifndef ANDREW_LIM_VERTEX_H
 #define ANDREW_LIM_VERTEX_H
 
-#include "Vector4f.h"
 #include "Vector2f.h"
+#include "Vector3f.h"
+#include "Vector4f.h"
 
 namespace al { namespace graphics {
 
-class Vertex
+template <class T, class Pos, class UV>
+class VertexG
 {
-private:
-
-  Vector4f _pos;
-  Vector2f _texcoords;
-  
 public:
-  
-  static Vertex xyuv(float x, float y, float u, float v)
+  Pos pos;
+  UV uv;
+  VertexG(T x, T y) : pos(x, y) {}
+  VertexG(const Pos& pos=Pos(), const UV& uv=UV()) : pos(pos), uv(uv) {}
+  T get(int index) const { return pos.get(index); }
+  T x() const { return pos.x; }
+  T y() const { return pos.y; }
+  T z() const{ return pos.z; }
+  T w() const { return pos.w; }
+  T u() const { return uv.u(); }
+  T v() const { return uv.v(); }
+  VertexG operator+(const VertexG& r) const { return add(r); }
+  VertexG operator+(T r) const { return add(r); }
+  VertexG operator-(const VertexG& r) const { return sub(r); }
+  VertexG operator-(T r) const { return sub(r); }
+  VertexG operator/(const VertexG& r) const { return div(r); }
+  VertexG operator/(T r) const { return div(r); }
+  VertexG operator*(const VertexG& r) const { return mul(r); }
+  VertexG operator*(T r) const { return mul(r); }
+
+  VertexG lerp(const VertexG& other, T t) const
   {
-    return {
-      {x, y, 0, 0},
-      {u, v}
-    };
-  }
-  
-  static Vertex xywuv(float x, float y, float w, float u, float v)
-  {
-    return {
-      {x, y, 0, w},
-      {u, v}
-    };
+    return VertexG(pos.lerp(other.pos, t), uv.lerp(other.uv, t));
   }
 
-  Vertex(float x, float y=0, float z=0, float w=1)
-  : _pos(x, y, z, w)
-  {
+  VertexG scaleXYZ(T f) { return VertexG( pos.mul(f, f, f, 1), uv );}
 
-  }
-  
-  Vertex(const Vector4f& pos=Vector4f(),
-         const Vector2f& texcoords=Vector2f())
-  : _pos(pos)
-  , _texcoords(texcoords)
+  VertexG add(const VertexG& r) const
   {
-  }
-  
-  Vector4f& pos()
-  {
-    return _pos;
-  }
-  
-  Vector2f& texcoords()
-  {
-    return _texcoords;
+    return VertexG(pos.add(r.pos), uv.add(r.uv));
   }
 
-  Vector4f getPos() const
+  VertexG add(T r) const
   {
-    return _pos;
+    return VertexG(pos.add(r), uv.add(r));
   }
 
-  Vector2f getTexCoords() const
+  VertexG sub(const VertexG& r) const
   {
-    return _texcoords;
+    return VertexG(pos.sub(r.pos), uv.sub(r.uv));
   }
 
-  void setTexCoords(const Vector2f& texcoords)
+  VertexG sub(T r) const
   {
-    _texcoords = texcoords;
+    return VertexG(pos.sub(r),uv.sub(r));
   }
 
-  float get(int index) const
+  VertexG mul(const VertexG& r) const
   {
-    return _pos.get(index);
+    return VertexG(pos.mul(r.pos),uv.mul(r.uv));
   }
 
-  float x() const
+  VertexG mul(T r) const
   {
-    return _pos.x();
+    return VertexG(pos.mul(r), uv.mul(r));
   }
 
-  float y() const
+  VertexG div(const VertexG& r) const
   {
-    return _pos.y();
+    return VertexG(pos.div(r.pos), uv.div(r.uv));
   }
 
-  float z() const
+  VertexG div(T r) const
   {
-    return _pos.z();
+    return VertexG(pos.div(r), uv.div(r));
   }
+}; // class Pos
 
-  float w() const
-  {
-    return _pos.w();
-  }
+typedef VertexG<float, Vector4f, Vector2f> Vertex4f;
+typedef VertexG<float, Vector2f, Vector2f> Vertex2f;
+typedef VertexG<float, Vector3f, Vector2f> Vertex3f;
 
-  float u() const
-  {
-    return _texcoords.u();
-  }
-  
-  float v() const
-  {
-    return _texcoords.v();
-  }
-
-  Vertex changeX(float newX)
-  {
-    return Vertex(
-      _pos.changeX(newX),
-      _texcoords
-    );
-  }
-
-  Vertex lerp(const Vertex& other, float lerpFactor) const
-  {
-    const Vector4f& newPos = _pos.lerp(other._pos, lerpFactor);
-    const Vector2f& newTex = _texcoords.lerp(other._texcoords, lerpFactor);
-    return Vertex(newPos, newTex);
-  }
-
-  Vertex scaleXYZ(float f)
-  {
-    return Vertex(
-      _pos.mul(f, f, f, 1),
-      _texcoords
-    );
-  }
-
-  Vertex add(const Vertex& r) const
-  {
-    return Vertex(
-      _pos.add(r._pos),
-      _texcoords.add(r._texcoords)
-    );
-  }
-
-  Vertex add(float r) const
-  {
-    return Vertex(
-      _pos.add(r),
-      _texcoords.add(r)
-    );
-  }
-
-  Vertex sub(const Vertex& r) const
-  {
-    return Vertex(
-      _pos.sub(r._pos),
-      _texcoords.sub(r._texcoords)
-    );
-  }
-
-  Vertex sub(float r) const
-  {
-    return Vertex(
-      _pos.sub(r),
-      _texcoords.sub(r)
-    );
-  }
-
-  Vertex mul(const Vertex& r) const
-  {
-    return Vertex(
-      _pos.mul(r._pos),
-      _texcoords.mul(r._texcoords)
-    );
-  }
-
-  Vertex mul(float r) const
-  {
-    return Vertex(
-      _pos.mul(r),
-      _texcoords.mul(r)
-    );
-  }
-
-  Vertex div(const Vertex& r) const
-  {
-    return Vertex(
-      _pos.div(r._pos),
-      _texcoords.div(r._texcoords)
-    );
-  }
-
-  Vertex div(float r) const
-  {
-    return Vertex(
-      _pos.div(r),
-      _texcoords.div(r)
-    );
-  }
-
-  Vertex operator+(const Vertex& r) const
-  {
-    return add(r);
-  }
-
-  Vertex operator+(float r) const
-  {
-    return add(r);
-  }
-
-  Vertex operator-(const Vertex& r) const
-  {
-    return sub(r);
-  }
-
-  Vertex operator-(float r) const
-  {
-    return sub(r);
-  }
-
-  Vertex operator/(const Vertex& r) const
-  {
-    return div(r);
-  }
-
-  Vertex operator/(float r) const
-  {
-    return div(r);
-  }
-
-  Vertex operator*(const Vertex& r) const
-  {
-    return mul(r);
-  }
-
-  Vertex operator*(float r) const
-  {
-    return mul(r);
-  }
-  
-}; // class Vector4f
 } // namespace al
 } // namespace graphics
 

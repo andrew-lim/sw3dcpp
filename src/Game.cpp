@@ -46,12 +46,12 @@ const int UPDATE_INTERVAL = 1000/DESIRED_FPS;
 
 // glm::mat4 camera(float Translate, glm::vec2 const& Rotate)
 // {
-// 	glm::mat4 Projection = glm::perspective(glm::pi<float>() * 0.25f, 4.0f / 3.0f, 0.1f, 100.f);
-// 	glm::mat4 View = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.0f, -Translate));
-// 	View = glm::rotate(View, Rotate.y, glm::vec3(-1.0f, 0.0f, 0.0f));
-// 	View = glm::rotate(View, Rotate.x, glm::vec3(0.0f, 1.0f, 0.0f));
-// 	glm::mat4 Model = glm::scale(glm::mat4(1.0f), glm::vec3(0.5f));
-// 	return Projection * View * Model;
+//  glm::mat4 Projection = glm::perspective(glm::pi<float>() * 0.25f, 4.0f / 3.0f, 0.1f, 100.f);
+//  glm::mat4 View = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.0f, -Translate));
+//  View = glm::rotate(View, Rotate.y, glm::vec3(-1.0f, 0.0f, 0.0f));
+//  View = glm::rotate(View, Rotate.x, glm::vec3(0.0f, 1.0f, 0.0f));
+//  glm::mat4 Model = glm::scale(glm::mat4(1.0f), glm::vec3(0.5f));
+//  return Projection * View * Model;
 // }
 
 glm::vec4 clipToNDC(glm::vec4 clip)
@@ -140,14 +140,14 @@ private:
     , MIControls
     , MIAbout
   };
-  
+
   enum DrawType {
     DrawPerspectiveCorrect = 0,
     DrawAffine = 1,
     DrawSolid = 2,
     DrawNothing = 3
   };
-  
+
   int _drawType = DrawPerspectiveCorrect;
   bool _drawWireframe;
   int _textureID;
@@ -174,7 +174,7 @@ private:
   void showAbout();
   LRESULT onDropFiles( WPARAM, LPARAM );
   static void CALLBACK TimeProc(UINT uID, UINT uMsg, DWORD_PTR dwUser, DWORD_PTR d1, DWORD_PTR d2);
-  
+
   BITMAPINFOHEADER _bmih;
   BITMAPINFO _dbmi;
   BufferDC          bufferDC ;
@@ -242,16 +242,16 @@ GameImpl::GameImpl()
   _textureID = 0;
   _drawWireframe = true;
 //  _backgroundColor=ImageData::makeLittlePixel(64, 145, 250);
-  
+
   srand( (unsigned int)time(0) );
   printf("DESIRED_FPS=%d\n", DESIRED_FPS);
   printf("TIMER_DELAY=%d\n", TIMER_DELAY);
-  
+
   _pastFps = _past = GetTickCount();
   printf("_pastFps=%lu\n, _past=%lu\n", _pastFps, _past);
-  
+
   GameImpl::hwndMain = hwnd;
-  
+
   Tests::run();
   createDefaultMesh();
   loadImages();
@@ -260,7 +260,7 @@ GameImpl::GameImpl()
   setClientSize(this->hwnd, _clientWidth, _clientHeight);
   centerWindow(this->hwnd);
   ShowWindow( hwnd, SW_SHOWNORMAL ) ;
-  
+
 //  startTimer();
   resetGame();
 
@@ -522,13 +522,13 @@ LRESULT GameImpl::handleMessage( UINT msg, WPARAM wParam, LPARAM lParam )
   {
     case WM_CLOSE:
       stopTimer();
-      PostQuitMessage( 0 ) ; 
+      PostQuitMessage( 0 ) ;
       return 0 ;
-      
+
     case WM_COMMAND:
     {
       WORD wID = LOWORD( wParam ) ;
-      
+
       if (wID >= MITexture1) {
         int tmp = wID - MITexture1;
         if (tmp>=0 && tmp<(int)_textureImageDatas.size()) {
@@ -542,7 +542,7 @@ LRESULT GameImpl::handleMessage( UINT msg, WPARAM wParam, LPARAM lParam )
         _scale = 1;
         resetGame();
       }
-      
+
       switch ( wID )
       {
         case MIReset: {
@@ -558,19 +558,19 @@ LRESULT GameImpl::handleMessage( UINT msg, WPARAM wParam, LPARAM lParam )
           _drawType = DrawNothing;
           _drawWireframe = true;
           break;
-        
+
         case MISolid:
           _drawType = DrawSolid;
-          break ; 
-        
+          break ;
+
         case MIPerspectiveCorrect:
           _drawType = DrawPerspectiveCorrect;
-          break ; 
-        
+          break ;
+
         case MIAffine:
           _drawType = DrawAffine;
-          break ; 
-          
+          break ;
+
         case MIWireframe:
           _drawWireframe = !_drawWireframe;
           break;
@@ -625,20 +625,20 @@ LRESULT GameImpl::handleMessage( UINT msg, WPARAM wParam, LPARAM lParam )
 
         case MIExit: {
           stopTimer();
-          PostQuitMessage( 0 ); 
+          PostQuitMessage( 0 );
           break;
         }
       }
-      return 0 ; 
+      return 0 ;
     }
-    
+
     case WM_KEYUP:
     {
       WORD key = static_cast<WORD>( wParam );
       _keys[key] = false;
-      return 0 ; 
+      return 0 ;
     }
-    
+
     case WM_KEYDOWN:
     {
       WORD key = static_cast<WORD>( wParam );
@@ -646,17 +646,17 @@ LRESULT GameImpl::handleMessage( UINT msg, WPARAM wParam, LPARAM lParam )
       if (_keys['R']) {
         resetGame();
       }
-      return 0 ; 
+      return 0 ;
     }
-    
+
     case WM_MM_TIMER:
-    {   
+    {
       updateFPS();
       updateGame();
       InvalidateRect(hwnd,NULL,FALSE);
       return 0;
     }
-    
+
     case WM_INITMENUPOPUP:
     {
       HMENU hMenu = (HMENU) wParam ;
@@ -700,7 +700,7 @@ LRESULT GameImpl::handleMessage( UINT msg, WPARAM wParam, LPARAM lParam )
                                       _clipMode==CLIP_NEAR_AND_FAR);
       }
 
-      return 0 ; 
+      return 0 ;
     }
 
     case WM_PAINT:
@@ -720,8 +720,8 @@ LRESULT GameImpl::handleMessage( UINT msg, WPARAM wParam, LPARAM lParam )
     }
 
     case WM_DROPFILES: return onDropFiles( wParam, lParam );
-    
-    default: 
+
+    default:
       return ::DefWindowProc( hwnd, msg, wParam, lParam ) ;
   }
 }
@@ -731,7 +731,7 @@ int GameImpl::run()
   MSG msg ;
   while ( GetMessage( &msg, 0, 0, 0 ) > 0 )
   {
-    TranslateMessage( &msg ) ; 
+    TranslateMessage( &msg ) ;
     DispatchMessage( &msg ) ;
   }
   return (int) msg.wParam ;
@@ -836,7 +836,7 @@ void GameImpl::updateFPS()
   int timeElapsed = now - _past ;
   if (timeElapsed > UPDATE_INTERVAL) {
     // do something
-    
+
   }
   // fps
   if ( now - _pastFps >= 1000 ) {
@@ -1010,19 +1010,19 @@ void GameImpl::drawWorld(HDC hdc)
     glm::mat4 rotateX = glm::rotate(glm::mat4(1), _camera.vrot, glm::vec3(-1.0f, 0.0f, 0.0f));
     glm::mat4 viewProj = proj * rotateX * rotateY * translate;
 
-    Vertex* vertices = t->getVertices();
-    glm::vec4 v1 = vertices[0].pos().vec4();
-    glm::vec4 v2 = vertices[1].pos().vec4();
-    glm::vec4 v3 = vertices[2].pos().vec4();
+    Vertex4f* vertices = t->getVertices();
+    glm::vec4 v1 = vertices[0].pos.array<glm::vec4>();
+    glm::vec4 v2 = vertices[1].pos.array<glm::vec4>();
+    glm::vec4 v3 = vertices[2].pos.array<glm::vec4>();
 
     glm::vec4 clip1 = viewProj * v1;
     glm::vec4 clip2 = viewProj * v2;
     glm::vec4 clip3 = viewProj * v3;
 
     // Create a triangle with clip coordinates
-    Vertex clipVertex1 = Vertex(Vector4f(clip1), t->texcoord(0));
-    Vertex clipVertex2 = Vertex(Vector4f(clip2), t->texcoord(1));
-    Vertex clipVertex3 = Vertex(Vector4f(clip3), t->texcoord(2));
+    Vertex4f clipVertex1 = Vertex4f(Vector4f(clip1), t->uv(0));
+    Vertex4f clipVertex2 = Vertex4f(Vector4f(clip2), t->uv(1));
+    Vertex4f clipVertex3 = Vertex4f(Vector4f(clip3), t->uv(2));
     Triangle triangleToClip(clipVertex1, clipVertex2, clipVertex3);
     triangleToClip.color() = t->color();
 
@@ -1047,9 +1047,9 @@ void GameImpl::drawWorld(HDC hdc)
     for (size_t i=0; i<clippedTriangles.size(); ++i) {
       Triangle triangle = clippedTriangles[i];
 
-      glm::vec4 ndc1 = clipToNDC(triangle.vertex(0).pos().vec4());
-      glm::vec4 ndc2 = clipToNDC(triangle.vertex(1).pos().vec4());
-      glm::vec4 ndc3 = clipToNDC(triangle.vertex(2).pos().vec4());
+      glm::vec4 ndc1 = clipToNDC(triangle.vertex(0).pos.array<glm::vec4>());
+      glm::vec4 ndc2 = clipToNDC(triangle.vertex(1).pos.array<glm::vec4>());
+      glm::vec4 ndc3 = clipToNDC(triangle.vertex(2).pos.array<glm::vec4>());
 
       float xprod = 0;
       if (_backfaceCullingOn) {
@@ -1145,9 +1145,9 @@ void GameImpl::drawWorld(HDC hdc)
       }
     }
   } // for mesh.size()
-  
+
   SetDIBitsToDevice(hdc,
-    0, 0, screenImageData.width(), screenImageData.height(), 
+    0, 0, screenImageData.width(), screenImageData.height(),
     0, 0, 0, screenImageData.height(),
     screenImageData.data(), &_dbmi, 0
   );

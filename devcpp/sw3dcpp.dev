@@ -29,7 +29,7 @@ IncludeVersionInfo=0
 SupportXPThemes=0
 CompilerSet=3
 CompilerSettings=0;0;0;0;0;0;0;1;0;0;0;0;0;0;0;0;0;0;0;0;0;0;8;0;0;0
-UnitCount=37
+UnitCount=36
 
 [VersionInfo]
 Major=1
@@ -380,16 +380,6 @@ Priority=1000
 OverrideBuildCmd=0
 BuildCmd=
 
-[Unit35]
-FileName=..\src\Vertex3f.h
-CompileCpp=1
-Folder=
-Compile=1
-Link=1
-Priority=1000
-OverrideBuildCmd=0
-BuildCmd=
-
 [Unit20]
 FileName=..\src\resource.rc
 CompileCpp=1
@@ -401,7 +391,7 @@ OverrideBuildCmd=0
 BuildCmd=
 
 [Unit36]
-FileName=..\src\Graphics3D.cpp
+FileName=..\src\Graphics3D.h
 CompileCpp=1
 Folder=
 Compile=1
@@ -412,6 +402,16 @@ BuildCmd=
 
 [Unit37]
 FileName=..\src\Graphics3D.h
+CompileCpp=1
+Folder=
+Compile=1
+Link=1
+Priority=1000
+OverrideBuildCmd=0
+BuildCmd=
+
+[Unit35]
+FileName=..\src\Graphics3D.cpp
 CompileCpp=1
 Folder=
 Compile=1

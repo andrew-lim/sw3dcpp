@@ -5,19 +5,21 @@
 
 namespace al { namespace graphics {
 
-class Vector2f
+// Generic Vector2
+template <class T>
+class Vector2g
 {
 public:
 
-  float x, y;
+  T x, y;
 
-  Vector2f(float x=0, float y=0)
+  Vector2g(T x=0, T y=0)
   : x(x)
   , y(y)
   {
   }
 
-  float get(int index) const
+  T get(int index) const
   {
     if (index==0) {
       return x;
@@ -25,90 +27,93 @@ public:
     return y;
   }
 
-  float u() const
+  T u() const
   {
     return x;
   }
 
-  float v() const
+  T v() const
   {
     return y;
   }
 
-  Vector2f add(Vector2f r) const
+  Vector2g add(Vector2g r) const
   {
-    return Vector2f(x + r.x, y + r.y);
+    return Vector2g(x + r.x, y + r.y);
   }
 
-  Vector2f add(float r) const
+  Vector2g add(T r) const
   {
-    return Vector2f(x + r, y + r);
+    return Vector2g(x + r, y + r);
   }
 
-  Vector2f sub(Vector2f r) const
+  Vector2g sub(Vector2g r) const
   {
-      return Vector2f(x - r.x, y - r.y);
+      return Vector2g(x - r.x, y - r.y);
   }
 
-  Vector2f sub(float r) const
+  Vector2g sub(T r) const
   {
-    return Vector2f(x - r, y - r);
+    return Vector2g(x - r, y - r);
   }
 
-  Vector2f mul(Vector2f r) const
+  Vector2g mul(Vector2g r) const
   {
-      return Vector2f(x * r.x, y * r.y);
+      return Vector2g(x * r.x, y * r.y);
   }
 
-  Vector2f mul(float r) const
+  Vector2g mul(T r) const
   {
-    return Vector2f(x * r, y * r);
+    return Vector2g(x * r, y * r);
   }
 
-  Vector2f mul(float scaleX, float scaleY)
+  Vector2g mul(T scaleX, T scaleY)
   {
-    return Vector2f(x * scaleX, y * scaleY);
+    return Vector2g(x * scaleX, y * scaleY);
   }
 
-  Vector2f div(Vector2f r) const
+  Vector2g div(Vector2g r) const
   {
-      return Vector2f(x / r.x, y / r.y);
+      return Vector2g(x / r.x, y / r.y);
   }
 
-  Vector2f div(float r) const
+  Vector2g div(T r) const
   {
-    return Vector2f(x / r, y / r);
+    return Vector2g(x / r, y / r);
   }
 
-  Vector2f abs() const
+  Vector2g abs() const
   {
-    return Vector2f(std::abs(x), std::abs(y));
+    return Vector2g(std::abs(x), std::abs(y));
   }
 
-  bool equals(const Vector2f& r) const
+  bool equals(const Vector2g& r) const
   {
     return x==r.x && y==r.y;
   }
 
-  bool operator==(const Vector2f& r) const
+  bool operator==(const Vector2g& r) const
   {
     return equals(r);
   }
 
-  bool operator!=(const Vector2f& r) const
+  bool operator!=(const Vector2g& r) const
   {
     return !equals(r);
   }
 
-  Vector2f lerp(const Vector2f& dest, float lerpFactor) const
+  Vector2g lerp(const Vector2g& dest, T lerpFactor) const
   {
-    return Vector2f(
+    return Vector2g(
       x+(dest.x-x)*lerpFactor,
       y+(dest.y-y)*lerpFactor
     );
   }
 
-}; // class Vector2f
+}; // class Vector2g
+
+typedef Vector2g<float> Vector2f;
+
 } // namespace al
 } // namespace graphics
 

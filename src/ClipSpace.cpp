@@ -3,8 +3,8 @@
 using namespace al::graphics;
 using namespace std;
 
-float ClipSpace::findLerpFactor(const Vertex& src,
-                                const Vertex& dst,
+float ClipSpace::findLerpFactor(const Vertex4f& src,
+                                const Vertex4f& dst,
                                 int ixyz,
                                 int planeSign)
 {
@@ -19,13 +19,13 @@ vector<Triangle> ClipSpace::clip(const Triangle& triangle,
 {
   vector<Triangle> triangles;
 
-  vector<Vertex> insidePoints;
-  vector<Vertex> outsidePoints;
+  vector<Vertex4f> insidePoints;
+  vector<Vertex4f> outsidePoints;
   vector<int> insideIndices;
   vector<int> outsideIndices;
 
   for (int i=0; i<3; ++i) {
-    const Vertex& pt = triangle.vertex(i);
+    const Vertex4f& pt = triangle.vertex(i);
     const float xyz = pt.get(ixyz);
     const float w = pt.w();
     const bool outside = (planeSign<0 && xyz<-w) || (planeSign>0 && xyz>w);
@@ -50,15 +50,15 @@ vector<Triangle> ClipSpace::clip(const Triangle& triangle,
 
   // 2 points outside, create a smaller triangle
   else if (2==outsidePoints.size() && 1==insidePoints.size()) {
-    Vertex& a = insidePoints[0];
-    Vertex& b = outsidePoints[0];
-    Vertex& c = outsidePoints[1];
+    Vertex4f& a = insidePoints[0];
+    Vertex4f& b = outsidePoints[0];
+    Vertex4f& c = outsidePoints[1];
     int ai = insideIndices[0];
     int bi = outsideIndices[0];
     float bt = ClipSpace::findLerpFactor(b, a, ixyz, planeSign);
     float ct = ClipSpace::findLerpFactor(c, a, ixyz, planeSign);
-    Vertex b1 = b.lerp(a, bt);
-    Vertex c1 = c.lerp(a, ct);
+    Vertex4f b1 = b.lerp(a, bt);
+    Vertex4f c1 = c.lerp(a, ct);
 
     // Preserve winding order
     // B follows A
@@ -73,15 +73,15 @@ vector<Triangle> ClipSpace::clip(const Triangle& triangle,
 
   // 1 point outside, create 2 smaller triangles
   else if (1==outsidePoints.size() && 2==insidePoints.size()) {
-    Vertex& a = insidePoints[0];
-    Vertex& b = outsidePoints[0];
-    Vertex& c = insidePoints[1];
+    Vertex4f& a = insidePoints[0];
+    Vertex4f& b = outsidePoints[0];
+    Vertex4f& c = insidePoints[1];
     int ai = insideIndices[0];
     int bi = outsideIndices[0];
     float abt = ClipSpace::findLerpFactor(b, a, ixyz, planeSign);
     float cbt = ClipSpace::findLerpFactor(b, c, ixyz, planeSign);
-    Vertex a1 = b.lerp(a, abt);
-    Vertex c1 = b.lerp(c, cbt);
+    Vertex4f a1 = b.lerp(a, abt);
+    Vertex4f c1 = b.lerp(c, cbt);
 
     // Preserve winding order
     // B follows A

@@ -128,9 +128,9 @@ void Graphics3D::fillTriangle(ImageData& imageData,
                               int x1, int y1, int x2, int y2, int x3, int y3,
                               u32 rgba)
 {
-  Vertex top(x1, y1);
-  Vertex mid(x2, y2);
-  Vertex bot(x3, y3);
+  Vertex2f top(x1, y1);
+  Vertex2f mid(x2, y2);
+  Vertex2f bot(x3, y3);
 
   // Sort the points vertically
   if (mid.y() < top.y()) {
@@ -153,10 +153,10 @@ void Graphics3D::fillTriangle(ImageData& imageData,
   }
 
   // Top to Bottom Steps
-  const Vertex topbotstep((bot.x() - top.x()) / std::abs(dytopbot));
+  const Vertex2f topbotstep((bot.x() - top.x()) / std::abs(dytopbot));
 
   // The middle point on the top-bottom line
-  Vertex mid2(
+  Vertex2f mid2(
     top.x()+dytopmid*topbotstep.x(),
     top.y()+dytopmid
   );
@@ -169,18 +169,18 @@ void Graphics3D::fillTriangle(ImageData& imageData,
 
   // Top Half Triangle
   if (dytopmid) {
-    const Vertex leftStep((mid.x() - top.x()) / std::abs(dytopmid));
-    const Vertex rightStep((mid2.x() - top.x()) / std::abs(dytopmid));
+    const Vertex2f leftStep((mid.x() - top.x()) / std::abs(dytopmid));
+    const Vertex2f rightStep((mid2.x() - top.x()) / std::abs(dytopmid));
     const int ystart = std::max(0, (int)top.y());
     const int yend = std::min((int)imageData.height()-1, (int)mid.y());
     for (int y=ystart; y<=yend; y++) {
       const int ysteps = y-top.y();
 
       // Left Point
-      const Vertex left(top.x()+ysteps*leftStep.x());
+      const Vertex2f left(top.x()+ysteps*leftStep.x());
 
       // Right Point
-      const Vertex right(top.x()+ysteps*rightStep.x());
+      const Vertex2f right(top.x()+ysteps*rightStep.x());
 
       // Draw the horizontal line between left and right
       const int xstart = std::max(0, (int)left.x());
@@ -193,18 +193,18 @@ void Graphics3D::fillTriangle(ImageData& imageData,
 
   // Bottom Half Triangle
   if (dymidbot) {
-    const Vertex leftStep((bot.x() - mid.x()) / std::abs(dymidbot));
-    const Vertex rightStep((bot.x() - mid2.x()) / std::abs(dymidbot));
+    const Vertex2f leftStep((bot.x() - mid.x()) / std::abs(dymidbot));
+    const Vertex2f rightStep((bot.x() - mid2.x()) / std::abs(dymidbot));
     const int ystart = std::max(0, (int)mid.y());
     const int yend = std::min((int)imageData.height()-1, (int)bot.y());
     for (int y=ystart; y<=yend; y++) {
       const int ysteps  = y - mid.y();
 
       // Left Point
-      const Vertex left(mid.x()+ysteps*leftStep.x());
+      const Vertex2f left(mid.x()+ysteps*leftStep.x());
 
       // Right Point
-      const Vertex right(mid2.x()+ysteps*rightStep.x());
+      const Vertex2f right(mid2.x()+ysteps*rightStep.x());
 
       // Draw the horizontal line between left and right
       const int xstart = std::max(0, (int)left.x());
@@ -216,15 +216,40 @@ void Graphics3D::fillTriangle(ImageData& imageData,
   }
 }
 
+inline void Graphics3D::affineScanLine(ImageData& imageData,
+                                       int y,
+                                       const Vertex3f& left,
+                                       const Vertex3f& right,
+                                       ImageData& textureImageData,
+                                       Grid<float>* zbuffer)
+{
+  const int leftx = left.x();
+  const int rightx = right.x();
+  const int dx = rightx - leftx;
+  if (dx) {
+    const Vertex3f scanlinestep = (right-left)/dx;
+    const int xstart = clampZero(leftx);
+    const int xend   = clampSize(rightx, (int)imageData.width()) ;
+    for (int x=xstart; x<=xend; x++) {
+      const int xsteps = x-leftx;
+      const Vertex3f tex = left + scanlinestep * xsteps;
+      const float texu = tex.u();
+      const float texv = tex.v();
+      imageData.pixel(x, y) = Graphics3D::pixelAtUV(textureImageData,
+                                                    texu, texv);
+    }
+  }
+}
+
 void Graphics3D::affineTriangle(ImageData& imageData,
-                                int x1, int y1, float u1, float v1,
-                                int x2, int y2, float u2, float v2,
-                                int x3, int y3, float u3, float v3,
+                                float x1, float y1, float u1, float v1,
+                                float x2, float y2, float u2, float v2,
+                                float x3, float y3, float u3, float v3,
                                 ImageData& textureImageData)
  {
-  Vertex top(Vertex::xyuv(x1, y1, u1, v1));
-  Vertex mid(Vertex::xyuv(x2, y2, u2, v2));
-  Vertex bot(Vertex::xyuv(x3, y3, u3, v3));
+  Vertex3f top( {x1, y1}, {u1, v1} );
+  Vertex3f mid( {x2, y2}, {u2, v2} );
+  Vertex3f bot( {x3, y3}, {u3, v3} );
 
   // Sort the points vertically
   if (mid.y() < top.y()) {
@@ -247,20 +272,10 @@ void Graphics3D::affineTriangle(ImageData& imageData,
   }
 
   // Top to Bottom Steps
-  const Vertex topbotstep(Vertex::xyuv(
-   (bot.x() - top.x()) / std::abs(dytopbot),
-   0,
-   (bot.u() - top.u()) / std::abs(dytopbot),
-   (bot.v() - top.v()) / std::abs(dytopbot)
-  ));
+  const Vertex3f topbotstep = (bot - top) / dytopbot;
 
   // The middle point on the top-bottom line
-  Vertex mid2(Vertex::xyuv(
-    top.x()+dytopmid*topbotstep.x(),
-    top.y()+dytopmid,
-    top.u()+dytopmid*topbotstep.u(),
-    top.v()+dytopmid*topbotstep.v()
-  ));
+  Vertex3f mid2 = top + topbotstep * dytopmid;
 
   // Make sure mid is left of mid2 because we will
   // draw the horizontal scan line from left-to-right
@@ -270,110 +285,29 @@ void Graphics3D::affineTriangle(ImageData& imageData,
 
   // Top Half Triangle
   if (dytopmid) {
-    const Vertex leftStep(Vertex::xyuv(
-      (mid.x() - top.x()) / std::abs(dytopmid),
-      0,
-      (mid.u() - top.u()) / std::abs(dytopmid),
-      (mid.v() - top.v()) / std::abs(dytopmid)
-    ));
-
-    const Vertex rightStep(Vertex::xyuv(
-      (mid2.x() - top.x()) / std::abs(dytopmid),
-      0,
-      (mid2.u() - top.u()) / std::abs(dytopmid),
-      (mid2.v() - top.v()) / std::abs(dytopmid)
-    ));
-
+    const Vertex3f leftStep = (mid-top)/dytopmid;
+    const Vertex3f rightStep = (mid2-top)/dytopmid;
     const int ystart = std::max(0, (int)top.y());
     const int yend = std::min((int)imageData.height()-1, (int)mid.y());
     for (int y=ystart; y<=yend; y++) {
       const int ysteps = y-top.y();
-
-      // Left Point
-      const Vertex left(Vertex::xyuv(
-        top.x()+ysteps*leftStep.x(),
-        0,
-        top.u()+ysteps*leftStep.u(),
-        top.v()+ysteps*leftStep.v()
-      ));
-
-      // Right Point
-      const Vertex right(Vertex::xyuv(
-        top.x()+ysteps*rightStep.x(),
-        0,
-        top.u()+ysteps*rightStep.u(),
-        top.v()+ysteps*rightStep.v()
-      ));
-
-      // Draw the horizontal line between left and right
-      const int dx = right.x()-left.x();
-      if (dx != 0) {
-        const float ustep = (right.u()-left.u()) / dx;
-        const float vstep = (right.v()-left.v()) / dx;
-        const int xstart = std::max(0, (int)left.x());
-        const int xend = std::min((int)right.x(), (int)imageData.width());
-        for (int x=xstart; x<xend; x++) {
-          const int xsteps = x-left.x();
-          const float u = left.u() + xsteps * ustep;
-          const float v = left.v() + xsteps * vstep;
-          const uint32_t pixel = Graphics3D::pixelAtUV(textureImageData, u, v);
-          imageData.pixel(x, y) = pixel;
-        }
-      }
+      const Vertex3f left = top + leftStep * ysteps;
+      const Vertex3f right = top + rightStep * ysteps;
+      affineScanLine(imageData, y, left, right, textureImageData, 0);
     }
   }
 
   // Bottom Half Triangle
   if (dymidbot) {
-     const Vertex leftStep(Vertex::xyuv(
-      (bot.x() - mid.x()) / std::abs(dymidbot),
-      0,
-      (bot.u() - mid.u()) / std::abs(dymidbot),
-      (bot.v() - mid.v()) / std::abs(dymidbot)
-    ));
-
-    const Vertex rightStep(Vertex::xyuv(
-      (bot.x() - mid2.x()) / std::abs(dymidbot),
-      0,
-      (bot.u() - mid2.u()) / std::abs(dymidbot),
-      (bot.v() - mid2.v()) / std::abs(dymidbot)
-    ));
+    const Vertex3f leftStep = (bot-mid)/dymidbot;
+    const Vertex3f rightStep = (bot-mid2)/dymidbot;
     const int ystart = std::max(0, (int)mid.y());
     const int yend = std::min((int)imageData.height()-1, (int)bot.y());
     for (int y=ystart; y<=yend; y++) {
       const int ysteps  = y - mid.y();
-
-      // Left Point
-      const Vertex left(Vertex::xyuv(
-        mid.x()+ysteps*leftStep.x(),
-        0,
-        mid.u()+ysteps*leftStep.u(),
-        mid.v()+ysteps*leftStep.v()
-      ));
-
-      // Right Point
-      const Vertex right(Vertex::xyuv(
-        mid2.x()+ysteps*rightStep.x(),
-        0,
-        mid2.u()+ysteps*rightStep.u(),
-        mid2.v()+ysteps*rightStep.v()
-      ));
-
-      // Draw the horizontal line between left and right
-      const int dx = right.x()-left.x();
-      if (dx != 0) {
-        const float ustep = (right.u()-left.u()) / dx;
-        const float vstep = (right.v()-left.v()) / dx;
-        const int xstart = std::max(0, (int)left.x());
-        const int xend = std::min((int)right.x(), (int)imageData.width());
-        for (int x=xstart; x<xend; x++) {
-          const int xsteps = x-left.x();
-          const float u = left.u() + xsteps * ustep;
-          const float v = left.v() + xsteps * vstep;
-          const uint32_t pixel = Graphics3D::pixelAtUV(textureImageData, u, v);
-          imageData.pixel(x, y) = pixel;
-        }
-      }
+      const Vertex3f left = mid + leftStep * ysteps;
+      const Vertex3f right = mid2 + rightStep * ysteps;
+      affineScanLine(imageData, y, left, right, textureImageData, 0);
     }
   }
 } // affineTriangle
