@@ -13,10 +13,7 @@ public:
 
   T x, y, z, w;
 
-  Vector4g(T x=0, T y=0, T z=0, T w=1)
-  : x(x), y(y), z(z), w(w)
-  {
-  }
+  Vector4g(T x=0, T y=0, T z=0, T w=1) : x(x), y(y), z(z), w(w) {}
 
   template <class Arr>
   Vector4g(const Arr& arr)
@@ -25,6 +22,30 @@ public:
   , z(arr[2])
   , w(arr[3])
   {
+  }
+
+  T u() const { return x; }
+  T v() const { return y; }
+  Vector4g add(Vector4g r) const {return Vector4g(x+r.x, y+r.y, z+r.z, w+r.w);}
+  Vector4g add(T r) const { return Vector4g(x + r, y + r, z + r, w + r); }
+  Vector4g sub(Vector4g r) const {return Vector4g(x-r.x, y-r.y, z-r.z, w-r.w);}
+  Vector4g sub(T r) const{return Vector4g(x - r, y - r, z - r, w - r);}
+  Vector4g mul(Vector4g r) const{return Vector4g(x*r.x, y*r.y, z*r.z, w*r.w);}
+  Vector4g mul(T r) const {return Vector4g(x * r, y * r, z * r, w * r);}
+  Vector4g mul(T sx, T sy, T sz, T sw=1) {return Vector4g(x*sx,y*sy,z*sz,w*sw);}
+  Vector4g div(Vector4g r) const { return Vector4g(x/r.x, y/r.y, z/r.z, w/r.w);}
+  Vector4g div(T r) const { return Vector4g(x / r, y / r, z / r, w / r); }
+  bool operator==(const Vector4g& r) const { return equals(r); }
+  bool operator!=(const Vector4g& r) const { return !equals(r); }
+
+  bool equals(const Vector4g& r) const
+  {
+    return x==r.x && y==r.y && z==r.z && w==r.w;
+  }
+
+  Vector4g abs() const
+  {
+    return Vector4g(std::abs(x), std::abs(y), std::abs(z), std::abs(w));
   }
 
   template <class Arr>
@@ -50,85 +71,10 @@ public:
       case 0: return x;
       case 1: return y;
       case 2: return z;
-      case 3: return w;
     }
-    return 0;
+    return w;
   }
 
-  T u() const
-  {
-    return x;
-  }
-
-  T v() const
-  {
-    return y;
-  }
-
-  Vector4g add(Vector4g r) const
-  {
-    return Vector4g(x + r.x, y + r.y, z + r.z, w + r.w);
-  }
-
-  Vector4g add(T r) const
-  {
-    return Vector4g(x + r, y + r, z + r, w + r);
-  }
-
-  Vector4g sub(Vector4g r) const
-  {
-      return Vector4g(x - r.x, y - r.y, z - r.z, w - r.w);
-  }
-
-  Vector4g sub(T r) const
-  {
-    return Vector4g(x - r, y - r, z - r, w - r);
-  }
-
-  Vector4g mul(Vector4g r) const
-  {
-      return Vector4g(x * r.x, y * r.y, z * r.z, w * r.w);
-  }
-
-  Vector4g mul(T r) const
-  {
-    return Vector4g(x * r, y * r, z * r, w * r);
-  }
-
-  Vector4g mul(T scaleX, T scaleY, T scaleZ, T scaleW=1)
-  {
-    return Vector4g(x * scaleX, y * scaleY, z * scaleZ, w * scaleW);
-  }
-
-  Vector4g div(Vector4g r) const
-  {
-      return Vector4g(x / r.x, y / r.y, z / r.z, w / r.w);
-  }
-
-  Vector4g div(T r) const
-  {
-    return Vector4g(x / r, y / r, z / r, w / r);
-  }
-
-  Vector4g abs() const
-  {
-    return Vector4g(std::abs(x), std::abs(y), std::abs(z), std::abs(w));
-  }
-
-  bool equals(const Vector4g& r) const
-  {
-    return x==r.x && y==r.y && z==r.z && w==r.w;
-  }
-
-  bool operator==(const Vector4g& r) const
-  {
-    return equals(r);
-  }
-
-  bool operator!=(const Vector4g& r) const
-  {
-    return !equals(r);
-  }
 
   Vector4g lerp(const Vector4g& dest, T lerpFactor) const
   {

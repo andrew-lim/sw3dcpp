@@ -7,10 +7,9 @@ namespace al { namespace graphics {
 
 class Triangle
 {
-private:
-  Vertex4f _vertices[3];
-  std::uint32_t _color;
 public:
+  Vertex4f vertices[3];
+  std::uint32_t color;
   int textureID; // -1 if not set
   Triangle();
   Triangle(const Vertex4f& a, const Vertex4f& b, const Vertex4f& c);
@@ -19,44 +18,34 @@ public:
            float x3, float y3, float z3,
            std::uint32_t color);
 
-  Vertex4f* getVertices()
-  {
-    return _vertices;
-  }
-
   Vertex4f& vertex(int i)
   {
-    return _vertices[i];
+    return vertices[i];
   }
 
   const Vertex4f& vertex(int i) const
   {
-    return _vertices[i];
+    return vertices[i];
   }
 
   Vector2f& uv(int i)
   {
-    return _vertices[i].uv;
+    return vertices[i].uv;
   }
 
-  std::uint32_t& color()
+  float u(int ptindex) const
   {
-    return _color;
+    return vertices[ptindex].uv.x;
   }
 
-  float getTexU(int ptindex)
+  float v(int ptindex) const
   {
-    return _vertices[ptindex].uv.x;
+    return vertices[ptindex].uv.y;
   }
 
-  float getTexV(int ptindex)
+  float w(int ptindex) const
   {
-    return _vertices[ptindex].uv.y;
-  }
-
-  float getW(int ptindex)
-  {
-    return _vertices[ptindex].pos.w;
+    return vertices[ptindex].pos.w;
   }
 
   void setTexUVs(float u1, float v1, float u2, float v2, float u3, float v3);

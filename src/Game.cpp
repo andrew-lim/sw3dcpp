@@ -1010,7 +1010,7 @@ void GameImpl::drawWorld(HDC hdc)
     glm::mat4 rotateX = glm::rotate(glm::mat4(1), _camera.vrot, glm::vec3(-1.0f, 0.0f, 0.0f));
     glm::mat4 viewProj = proj * rotateX * rotateY * translate;
 
-    Vertex4f* vertices = t->getVertices();
+    Vertex4f* vertices = t->vertices;
     glm::vec4 v1 = vertices[0].pos.array<glm::vec4>();
     glm::vec4 v2 = vertices[1].pos.array<glm::vec4>();
     glm::vec4 v3 = vertices[2].pos.array<glm::vec4>();
@@ -1024,7 +1024,7 @@ void GameImpl::drawWorld(HDC hdc)
     Vertex4f clipVertex2 = Vertex4f(Vector4f(clip2), t->uv(1));
     Vertex4f clipVertex3 = Vertex4f(Vector4f(clip3), t->uv(2));
     Triangle triangleToClip(clipVertex1, clipVertex2, clipVertex3);
-    triangleToClip.color() = t->color();
+    triangleToClip.color = t->color;
 
     vector<Triangle> trianglesToClip;
     trianglesToClip.push_back(triangleToClip);
@@ -1071,7 +1071,7 @@ void GameImpl::drawWorld(HDC hdc)
         printf("zfar=%f\n,", zfar);
         printf("viewport width=%d", _clientWidth);
         printf("viewport height=%d", _clientHeight);
-        printf("t->color()=%d\n", t->color());
+        printf("t->color=%d\n", t->color);
         printf("v1 = %s\n", glm::to_string(v1).c_str());
         printf("translate = %s\n", glm::to_string(translate).c_str());
         printf("proj = %s\n", glm::to_string(proj).c_str());
@@ -1082,12 +1082,16 @@ void GameImpl::drawWorld(HDC hdc)
         printf("xprod=%f\n", xprod);
       }
 
+      const float x1 = win1[0], y1 = win1[1], w1 = win1[3];
+      const float x2 = win2[0], y2 = win2[1], w2 = win2[3];
+      const float x3 = win3[0], y3 = win3[1], w3 = win3[3];
+
       if (_drawType==DrawSolid) {
         Graphics3D::fillTriangle(screenImageData,
-                                 win1[0], win1[1],
-                                 win2[0], win2[1],
-                                 win3[0], win3[1],
-                                 t->color());
+                                 x1, y1,
+                                 x2, y2,
+                                 x3, y3,
+                                 t->color);
       }
 
       else if (_drawType==DrawAffine) {
@@ -1101,9 +1105,9 @@ void GameImpl::drawWorld(HDC hdc)
           }
         }
         Graphics3D::affineTriangle(screenImageData,
-                                   win1[0], win1[1], triangle.getTexU(0), triangle.getTexV(0),
-                                   win2[0], win2[1], triangle.getTexU(1), triangle.getTexV(1),
-                                   win3[0], win3[1], triangle.getTexU(2), triangle.getTexV(2),
+                                   x1, y1, triangle.u(0), triangle.v(0),
+                                   x2, y2, triangle.u(1), triangle.v(1),
+                                   x3, y3, triangle.u(2), triangle.v(2),
                                    *textureData);
       }
 
@@ -1118,22 +1122,14 @@ void GameImpl::drawWorld(HDC hdc)
           }
         }
         if (textureData) {
-          float x1 = win1[0], y1 = win1[1], w1 = win1[3];
-          float x2 = win2[0], y2 = win2[1], w2 = win2[3];
-          float x3 = win3[0], y3 = win3[1], w3 = win3[3];
-//          textureData->blit(screenImageData, 100, 100, 0, 0, 100, 100);
            Graphics3D::texturedTriangle(screenImageData,
-                                      x1, y1, w1, triangle.getTexU(0), triangle.getTexV(0),
-                                      x2, y2, w2, triangle.getTexU(1), triangle.getTexV(1),
-                                      x3, y3, w3, triangle.getTexU(2), triangle.getTexV(2),
+                                      x1, y1, w1, triangle.u(0), triangle.v(0),
+                                      x2, y2, w2, triangle.u(1), triangle.v(1),
+                                      x3, y3, w3, triangle.u(2), triangle.v(2),
                                       *textureData,
                                       (_zbufferOn ? &zbuffer:0));
 
         }
-      }
-
-      else {
-        // draw nothing
       }
 
       if (_drawWireframe) {
