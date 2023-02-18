@@ -117,6 +117,7 @@ private:
     , MI1366x768
     , MI1920x1080
     , MIShowFPS
+    , MIShowTriangleCount
     , MIShowFileName
     , MIScale001
     , MIScale01
@@ -181,7 +182,7 @@ private:
   ImageData         screenImageData;
 
   bool              _backfaceCullingOn;
-  bool              _zbufferOn, _fpsOn, _showFileName;
+  bool              _zbufferOn, _fpsOn, _showFileName, _showTriangleCount;
   vector<ImageData> _textureImageDatas;
 
   int _clientWidth = CLIENT_WIDTH;
@@ -224,6 +225,7 @@ GameImpl::GameImpl()
   , _zbufferOn(true)
   , _fpsOn(true)
   , _showFileName(true)
+  , _showTriangleCount(true)
   , _xrot()
   , _yrot()
   , _currentFPS()
@@ -320,6 +322,7 @@ void GameImpl::createMenus()
   _optionsMenu.add("Backface Culling", MIBackfacCulling);
   _optionsMenu.add("Z Buffer", MIZBuffer);
   _optionsMenu.add("Show FPS", MIShowFPS);
+  _optionsMenu.add("Show Triangle Count", MIShowTriangleCount);
   _optionsMenu.add("Show File Name", MIShowFileName);
   _optionsMenu.addSeparator();
   _optionsMenu.add("640x360", MI640x360);
@@ -583,6 +586,10 @@ LRESULT GameImpl::handleMessage( UINT msg, WPARAM wParam, LPARAM lParam )
           _fpsOn = !_fpsOn;
           break;
 
+        case MIShowTriangleCount:
+          _showTriangleCount = !_showTriangleCount;
+          break;
+
         case MIShowFileName:
           _showFileName = !_showFileName;
           break;
@@ -671,6 +678,7 @@ LRESULT GameImpl::handleMessage( UINT msg, WPARAM wParam, LPARAM lParam )
         _optionsMenu.setMenuItemChecked( MIZBuffer, _zbufferOn );
         _optionsMenu.setMenuItemChecked( MIBackfacCulling, _backfaceCullingOn );
         _optionsMenu.setMenuItemChecked( MIShowFPS, _fpsOn );
+        _optionsMenu.setMenuItemChecked( MIShowTriangleCount, _showTriangleCount );
         _optionsMenu.setMenuItemChecked( MIShowFileName, _showFileName );
         _optionsMenu.setMenuItemChecked( MI640x360, _clientWidth==640 && _clientHeight==360 );
         _optionsMenu.setMenuItemChecked( MI640x480, _clientWidth==640 && _clientHeight==480);
@@ -707,7 +715,7 @@ LRESULT GameImpl::handleMessage( UINT msg, WPARAM wParam, LPARAM lParam )
     {
       PAINTSTRUCT ps ;
       HDC hDC = BeginPaint( hwnd, &ps ) ;
-      if (_fpsOn || _showFileName) {
+      if (_fpsOn || _showFileName || _showTriangleCount) {
         drawWorld(bufferDC);
         drawFPS(bufferDC);
         bufferDC.draw( hDC );
@@ -962,14 +970,18 @@ void GameImpl::updateGame()
 
 void GameImpl::drawFPS(HDC hdc)
 {
-  TCHAR fpsText[64];
+  string info;
   RECT rc = {0} ;
   GetClientRect( hwnd, &rc ) ;
 
   if (_fpsOn) {
-    sprintf(fpsText, "FPS: %lu", _currentFPS);
-    DrawText(hdc, fpsText, -1, &rc, DT_LEFT|DT_TOP);
+    info += "FPS: " + to_string(_currentFPS) + "\n";
   }
+  if (_showTriangleCount) {
+    info += "Triangles: " + to_string(_scaledMesh.size());
+
+  }
+  DrawText(hdc, info.c_str(), -1, &rc, DT_LEFT|DT_TOP);
 
   if (_showFileName) {
     if (!filepath.empty()) {
