@@ -10,6 +10,7 @@
 #include "OBJLoader.h"
 #include "Grid.h"
 #include "Vector3f.h"
+#include "Graphics3D.h"
 
 using namespace al::graphics;
 using namespace std;
@@ -234,6 +235,29 @@ void testFloats()
   printf("--- testFloats() end\n\n");
 }
 
+void testClipLineToRect()
+{
+  int screenWidth = 320;
+  int screenHeight = 240;
+  int xmin=0;
+  int ymin=0;
+  int xmax=screenWidth-1;
+  int ymax=screenHeight-1;
+  int a[2] = {-10, 10};
+  int b[2] = {300, 250};
+
+  printf("Before clipping:\n\ta={%d, %d}\n\tb=[%d, %d]\n",
+         a[0], a[1], b[0], b[1]);
+
+  if (Graphics3D::clipLineToRect(a, b, xmin, ymin, xmax, ymax)) {
+    printf("After clipping:\n\ta={%d, %d}\n\tb=[%d, %d]\n",
+           a[0], a[1], b[0], b[1]);
+  }
+  else {
+    printf("clipLineToRect returned false\n");
+  }
+}
+
 void Tests::run()
 {
   std::cout << "__cplusplus=" << __cplusplus << std::endl;
@@ -244,4 +268,5 @@ void Tests::run()
   testOBJLoader();
   testGrid();
   testfmod();
+  testClipLineToRect();
 }

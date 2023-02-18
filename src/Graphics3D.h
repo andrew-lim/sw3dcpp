@@ -15,8 +15,9 @@ public:
   static float rad2deg(float rad) { return rad * (180.0 / M_PI); }
   inline static int clampZero(int v) { return v<0 ? 0 : v; }
   inline static int clampSize(int v, int size) { return v>=size ? size-1 : v; }
-  static bool clipByScreenLeft(int& x0, int& y0, int& x1, int& y1);
-  static bool clipByScreenTop(int& x0, int& y0, int& x1, int& y1);
+  static bool clipLineToRect(int a[2], int b[2],
+                             int xmin, int ymin, int xmax, int ymax);
+
 
   // Gets the pixel from an ImageData bitmap by converting UV coordinates
   // to bitmap coordinates
