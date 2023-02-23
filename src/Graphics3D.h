@@ -49,9 +49,12 @@ public:
     return imageData.pixel(x,y);
   }
 
-    /**
-   * Calculates the cross-product from 3 vertices but ignores the Z component
+  /**
+   * Calculates the cross-product of 2 vectors but ignores the Z component
    * Should be used in NDC space
+   *
+   * The 2 vectors are identified by 3 vertices a, b and c where a is the
+   * common point. First vector is (b-a) and second vector is (c-a)
    *
    * See https://stackoverflow.com/a/35280392/1645045
    *
