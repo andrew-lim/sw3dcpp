@@ -1074,25 +1074,25 @@ void GameImpl::drawWorld(HDC hdc)
       glm::vec4 win2 = ndcToWindow(ndc2, _clientWidth, _clientHeight);
       glm::vec4 win3 = ndcToWindow(ndc3, _clientWidth, _clientHeight);
 
-      static bool runOnce = false;
-      if (!runOnce && i==0) {
-        runOnce = true;
-        printf("fovydeg=%f\n,", fovydeg);
-        printf("fovyrad=%f\n,", fovyrad);
-        printf("znear=%f\n,", znear);
-        printf("zfar=%f\n,", zfar);
-        printf("viewport width=%d", _clientWidth);
-        printf("viewport height=%d", _clientHeight);
-        printf("t->color=%d\n", t->color);
-        printf("v1 = %s\n", glm::to_string(v1).c_str());
-        printf("translate = %s\n", glm::to_string(translate).c_str());
-        printf("proj = %s\n", glm::to_string(proj).c_str());
-        printf("viewProj = %s\n", glm::to_string(viewProj).c_str());
-        printf("clip1 = %s\n", glm::to_string(clip1).c_str());
-        printf("ndc1 = %s\n", glm::to_string(ndc1).c_str());
-        printf("win1 = %s\n", glm::to_string(win1).c_str());
-        printf("xprod=%f\n", xprod);
-      }
+//      static bool runOnce = false;
+//      if (!runOnce && i==0) {
+//        runOnce = true;
+//        printf("fovydeg=%f\n,", fovydeg);
+//        printf("fovyrad=%f\n,", fovyrad);
+//        printf("znear=%f\n,", znear);
+//        printf("zfar=%f\n,", zfar);
+//        printf("viewport width=%d", _clientWidth);
+//        printf("viewport height=%d", _clientHeight);
+//        printf("t->color=%d\n", t->color);
+//        printf("v1 = %s\n", glm::to_string(v1).c_str());
+//        printf("translate = %s\n", glm::to_string(translate).c_str());
+//        printf("proj = %s\n", glm::to_string(proj).c_str());
+//        printf("viewProj = %s\n", glm::to_string(viewProj).c_str());
+//        printf("clip1 = %s\n", glm::to_string(clip1).c_str());
+//        printf("ndc1 = %s\n", glm::to_string(ndc1).c_str());
+//        printf("win1 = %s\n", glm::to_string(win1).c_str());
+//        printf("xprod=%f\n", xprod);
+//      }
 
       const float x1 = win1[0], y1 = win1[1], w1 = win1[3];
       const float x2 = win2[0], y2 = win2[1], w2 = win2[3];

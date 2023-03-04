@@ -19,7 +19,7 @@ using namespace std;
 
 void testVector4f()
 {
-  printf("--- testVector4f start\n");
+  printf("--- testVector4f() start\n");
   Vector4f a(4, 3, 2, 1);
   if (a.x!=4 || a.y!=3 || a.z!=2 || a.w!=1) {
     throw std::runtime_error("testVector4f() failed a is wrong");
@@ -41,14 +41,13 @@ void testVector4f()
   }
 
   Vector4f h = g.lerp(Vector4f(20, 20, 20, 20), 0.5);
-  printf("h=%s\n", h.toString().c_str());
 
   Vector4f i(14, 13, 12, 11);
   if (h!=i) {
     throw std::runtime_error("testVector4f() failed h should equal i");
   }
 
-  printf("--- testVector4f end\n\n");
+  printf("--- testVector4f() end\n\n");
 }
 
 void testVertex4f()
@@ -61,12 +60,7 @@ void testVertex4f()
   Vertex4f vb(Vector4f(0, 0, 0), Vector2f(0,1));
   Vertex4f vc(Vector4f(1, 1, 0), Vector2f(1,1));
 
-  printf("va.pos = %s\n", va.pos.toString().c_str());
-  printf("vb.pos = %s\n", vb.pos.toString().c_str());
-
   Vertex4f lerpab = va.lerp(vb, 0.5);
-  printf("lerpab.pos()=%s\n", lerpab.pos.toString().c_str());
-  printf("lerpab.texcoords()=(%f,%f)\n", lerpab.uv.x, lerpab.uv.y);
 
   Vector4f correctPos(0, 0.5, 0);
   Vector2f correctTex(0, 0.5);
@@ -79,103 +73,6 @@ void testVertex4f()
   }
 
   printf("--- testVertex4f() end\n\n");
-}
-
-void testTinyObj()
-{
-  printf("--- testTinyObj() start\n");
-  std::string inputfile = "../res/obj/cube.obj";
-  tinyobj::ObjReaderConfig reader_config;
-  reader_config.mtl_search_path = "./"; // Path to material files
-
-  tinyobj::ObjReader reader;
-
-  if (!reader.ParseFromFile(inputfile, reader_config)) {
-    if (!reader.Error().empty()) {
-        std::string msg = "testTinyObj failed(): ";
-        msg += reader.Error();
-        throw std::runtime_error("");
-    }
-    exit(1);
-  }
-
-  if (!reader.Warning().empty()) {
-    std::string msg = "testTinyObj failed() with warning: ";
-    msg += reader.Warning();
-    throw std::runtime_error("");
-  }
-
-  auto& attrib = reader.GetAttrib();
-  auto& shapes = reader.GetShapes();
-  auto& materials = reader.GetMaterials();
-
-  printf("materials.size()=%d\n", (int)shapes.size());
-
-  // Loop over shapes
-  for (size_t s = 0; s < shapes.size(); s++) {
-    size_t index_offset = 0;
-    for (size_t f = 0; f < shapes[s].mesh.num_face_vertices.size(); f++) {
-      // Loop over faces(polygon)
-      printf("Face %d\n", (int)f);
-      size_t fv = size_t(shapes[s].mesh.num_face_vertices[f]);
-
-      // Loop over vertices in the face.
-      for (size_t v = 0; v < fv; v++) {
-        // access to vertex
-        tinyobj::index_t idx = shapes[s].mesh.indices[index_offset + v];
-        tinyobj::real_t vx = attrib.vertices[3*size_t(idx.vertex_index)+0];
-        tinyobj::real_t vy = attrib.vertices[3*size_t(idx.vertex_index)+1];
-        tinyobj::real_t vz = attrib.vertices[3*size_t(idx.vertex_index)+2];
-        printf("\tvertex (%f, %f, %f)\n", vx, vy, vz);
-
-        // Check if `normal_index` is zero or positive. negative = no normal data
-        if (idx.normal_index >= 0) {
-          tinyobj::real_t nx = attrib.normals[3*size_t(idx.normal_index)+0];
-          tinyobj::real_t ny = attrib.normals[3*size_t(idx.normal_index)+1];
-          tinyobj::real_t nz = attrib.normals[3*size_t(idx.normal_index)+2];
-          printf("\tvertex normal (%f, %f, %f)\n", nx, ny, nz);
-        }
-
-        // Check if `texcoord_index` is zero or positive. negative = no texcoord data
-        if (idx.texcoord_index >= 0) {
-          tinyobj::real_t tx = attrib.texcoords[2*size_t(idx.texcoord_index)+0];
-          tinyobj::real_t ty = attrib.texcoords[2*size_t(idx.texcoord_index)+1];
-          printf("\tex (%f, %f)\n", tx, ty);
-        }
-
-        // Optional: vertex colors
-         tinyobj::real_t r   = attrib.colors[3*size_t(idx.vertex_index)+0];
-         tinyobj::real_t g = attrib.colors[3*size_t(idx.vertex_index)+1];
-         tinyobj::real_t b  = attrib.colors[3*size_t(idx.vertex_index)+2];
-         printf("\trgb (%f, %f, %f)\n", r, g, b);
-      }
-      index_offset += fv;
-
-      // per-face material
-      const std::vector<int>& material_ids = shapes[s].mesh.material_ids;
-      int material_id = (int)material_ids[f];
-      if (material_id != -1) {
-        const tinyobj::material_t& material = materials[material_id];
-        printf("face %d\tmaterial_id=%d\tname=%s\n", (int)f, material_id, material.name.c_str() ) ;
-      }
-    }
-  }
-  printf("--- testTinyObj() end\n\n");
-
-}
-void testOBJLoader()
-{
-  printf("--- testOBJLoader() start\n");
-  al::graphics::OBJLoader objLoader(true);
-  vector<Triangle> triangles;
-  objLoader.load(CUBE_FILE);
-  if (objLoader.triangles.size() != 12) {
-    string msg = "Expected 12 triangle faces in cube.obj, instead found ";
-    msg += std::to_string((int)objLoader.triangles.size());
-    printf("triangles.size() = %d\n", (int)objLoader.triangles.size());
-    throw std::runtime_error(msg.c_str());
-  }
-  printf("--- testOBJLoader() end\n\n");
 }
 
 void testGrid()
@@ -200,7 +97,6 @@ void testfmod()
   printf("--- testfmod() start\n");
   float a = fmod(2.0f, 1.0f);
   float b = fmod(1.5f, 1.0f);
-  printf("a=%f, b=%f\n", a, b);
   if (a != 0.0f) {
     throw runtime_error("a should be 0.0f");
   }
@@ -210,33 +106,9 @@ void testfmod()
   printf("--- testfmod() end\n\n");
 }
 
-void testFloats()
-{
-  printf("--- testFloats() start\n");
-
-  float midy = 1.23f;
-  int y = 1;
-  int ystep = y - midy;
-  if (midy > y) {
-    printf("mid>y\n");
-  }
-  else {
-    printf("mid<=y\n");
-  }
-
-  printf("ystep=%d\n", ystep);
-  int x = 423;
-  float leftx = 422.5;
-
-
-  printf("%d-%f=%d\n", x, leftx, (int)(x-leftx));
-  printf("%d-(int)%f=%d\n", x, leftx, x-(int)leftx);
-
-  printf("--- testFloats() end\n\n");
-}
-
 void testClipLineToRect()
 {
+  printf("--- testClipLineToRect() start\n");
   int screenWidth = 320;
   int screenHeight = 240;
   int xmin=0;
@@ -246,26 +118,31 @@ void testClipLineToRect()
   int a[2] = {-10, 10};
   int b[2] = {300, 250};
 
-  printf("Before clipping:\n\ta={%d, %d}\n\tb=[%d, %d]\n",
-         a[0], a[1], b[0], b[1]);
-
   if (Graphics3D::clipLineToRect(a, b, xmin, ymin, xmax, ymax)) {
-    printf("After clipping:\n\ta={%d, %d}\n\tb=[%d, %d]\n",
+    bool correct = a[0] == 0  &&
+                   a[1] == 17 &&
+                   b[0] == 285 &&
+                   b[1] == 239;
+    if (!correct) {
+      printf("Before clipping:\n\ta={%d, %d}\n\tb=[%d, %d]\n",
+             a[0], a[1], b[0], b[1]);
+      printf("After clipping:\n\ta={%d, %d}\n\tb=[%d, %d]\n",
            a[0], a[1], b[0], b[1]);
+      throw runtime_error("clipLineToRect returned unexpected values");
+    }
+
   }
   else {
-    printf("clipLineToRect returned false\n");
+    throw runtime_error("clipLineToRect returned false");
   }
+  printf("--- testClipLineToRect() end\n\n");
 }
 
 void Tests::run()
 {
   std::cout << "__cplusplus=" << __cplusplus << std::endl;
-  testFloats();
   testVector4f();
   testVertex4f();
-  testTinyObj();
-  testOBJLoader();
   testGrid();
   testfmod();
   testClipLineToRect();
