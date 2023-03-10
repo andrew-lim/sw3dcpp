@@ -3,10 +3,10 @@
 using namespace al::graphics;
 using namespace std;
 
-float ClipSpace::findLerpFactor(const Vertex4f& src,
-                                const Vertex4f& dst,
-                                int ixyz,
-                                int planeSign)
+float ClipSpace::signedDistanceRatio(const Vertex4f& src,
+                                     const Vertex4f& dst,
+                                     int ixyz,
+                                     int planeSign)
 {
   const float d1 = (src.get(ixyz) - src.w()*planeSign);
   const float d2 = (dst.get(ixyz) - dst.w()*planeSign);
@@ -55,8 +55,8 @@ vector<Triangle> ClipSpace::clip(const Triangle& triangle,
     Vertex4f& c = outsidePoints[1];
     int ai = insideIndices[0];
     int bi = outsideIndices[0];
-    float bt = ClipSpace::findLerpFactor(b, a, ixyz, planeSign);
-    float ct = ClipSpace::findLerpFactor(c, a, ixyz, planeSign);
+    float bt = ClipSpace::signedDistanceRatio(b, a, ixyz, planeSign);
+    float ct = ClipSpace::signedDistanceRatio(c, a, ixyz, planeSign);
     Vertex4f b1 = b.lerp(a, bt);
     Vertex4f c1 = c.lerp(a, ct);
 
@@ -78,8 +78,8 @@ vector<Triangle> ClipSpace::clip(const Triangle& triangle,
     Vertex4f& c = insidePoints[1];
     int ai = insideIndices[0];
     int bi = outsideIndices[0];
-    float abt = ClipSpace::findLerpFactor(b, a, ixyz, planeSign);
-    float cbt = ClipSpace::findLerpFactor(b, c, ixyz, planeSign);
+    float abt = ClipSpace::signedDistanceRatio(b, a, ixyz, planeSign);
+    float cbt = ClipSpace::signedDistanceRatio(b, c, ixyz, planeSign);
     Vertex4f a1 = b.lerp(a, abt);
     Vertex4f c1 = b.lerp(c, cbt);
 

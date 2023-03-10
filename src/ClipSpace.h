@@ -29,10 +29,10 @@ public:
   @param ixyz Axis part - 0 or 1 or 2 for x/y/z axis respectively
   @param planeSign Either 1 or -1
   */
-  static float findLerpFactor(const Vertex4f& src,
-                              const Vertex4f& dst,
-                              int ixyz,
-                              int planeSign);
+  static float signedDistanceRatio(const Vertex4f& src,
+                                   const Vertex4f& dst,
+                                   int ixyz,
+                                   int planeSign);
 
   static std::vector<Triangle> clip(const Triangle& triangle,
                                     int ixyz,
