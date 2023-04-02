@@ -75,6 +75,27 @@ public:
     return w;
   }
 
+  T& operator[](int index)
+  {
+    switch (index)
+    {
+      case 0: return x;
+      case 1: return y;
+      case 2: return z;
+    }
+    return w;
+  }
+
+  const T& operator[](int index) const
+  {
+    switch (index)
+    {
+      case 0: return x;
+      case 1: return y;
+      case 2: return z;
+    }
+    return w;
+  }
 
   Vector4g lerp(const Vector4g& dest, T lerpFactor) const
   {
