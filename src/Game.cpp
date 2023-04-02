@@ -1041,27 +1041,7 @@ void GameImpl::drawWorld(HDC hdc)
       G3D::ndcToWindow(triangle[1].pos, _clientWidth, _clientHeight);
       G3D::ndcToWindow(triangle[2].pos, _clientWidth, _clientHeight);
 
-//      static bool runOnce = false;
-//      if (!runOnce && i==0) {
-//        runOnce = true;
-//        printf("fovydeg=%f\n,", fovydeg);
-//        printf("fovyrad=%f\n,", fovyrad);
-//        printf("znear=%f\n,", znear);
-//        printf("zfar=%f\n,", zfar);
-//        printf("viewport width=%d", _clientWidth);
-//        printf("viewport height=%d", _clientHeight);
-//        printf("t->color=%d\n", t->color);
-//        printf("v1 = %s\n", glm::to_string(v1).c_str());
-//        printf("translate = %s\n", glm::to_string(translate).c_str());
-//        printf("proj = %s\n", glm::to_string(proj).c_str());
-//        printf("viewProj = %s\n", glm::to_string(viewProj).c_str());
-//        printf("clip1 = %s\n", glm::to_string(clip1).c_str());
-//        printf("ndc1 = %s\n", glm::to_string(ndc1).c_str());
-//        printf("win1 = %s\n", glm::to_string(win1).c_str());
-//        printf("xprod=%f\n", xprod);
-//      }
-
-      TriangleDrawer drawer(&zbuffer);
+      TriangleDrawer drawer(_zbufferOn ? &zbuffer : 0);
 
       if (_drawType==DrawSolid) {
         drawer.drawMode = SOLID_COLOR;

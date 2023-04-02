@@ -31,7 +31,7 @@ inline void TriangleDrawer::scanline(ImageData& imageData,
       const int xsteps = x-leftx;
       const Vertex4f tex = left + scanlinestep * xsteps;
       const float w = 1/tex.w();
-      const float depth = tex.z() * w;
+      const float depth = w;
       if (depthBuffer) {
         if (depth>=depthBuffer->unsafeGet(x,y)) {
           continue;
@@ -54,7 +54,9 @@ inline void TriangleDrawer::scanline(ImageData& imageData,
       const uint8_t alpha = rgba[3];
       if (alpha == 255) {
         imageData.pixel(x, y) = pixel;
-        depthBuffer->unsafeSet(x, y, depth);
+        if (depthBuffer) {
+          depthBuffer->unsafeSet(x, y, depth);
+        }
       }
     }
   }
