@@ -30,6 +30,7 @@
 #include "FileDialog.h"
 #include "lodepng.h"
 #include "Camera.h"
+#include "TriangleDrawer.h"
 #include <iostream>
 using namespace std ;
 using namespace al::graphics;
@@ -40,49 +41,10 @@ using namespace glm;
 #define MOVE_SPEED 4
 #define ROT_SPEED (G3D::deg2rad(2))
 #define WM_MM_TIMER WM_USER + 1    //  Custom message sent by the timer.
+#define SOLID_COLOR (ImageData::makeLittlePixel(0, 255, 0, 255))
 const int DESIRED_FPS = 60;
 const int UPDATE_INTERVAL = 1000/DESIRED_FPS;
 #define TIMER_DELAY UPDATE_INTERVAL             //  Refresh rate in milliseconds.
-
-// glm::mat4 camera(float Translate, glm::vec2 const& Rotate)
-// {
-//  glm::mat4 Projection = glm::perspective(glm::pi<float>() * 0.25f, 4.0f / 3.0f, 0.1f, 100.f);
-//  glm::mat4 View = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.0f, -Translate));
-//  View = glm::rotate(View, Rotate.y, glm::vec3(-1.0f, 0.0f, 0.0f));
-//  View = glm::rotate(View, Rotate.x, glm::vec3(0.0f, 1.0f, 0.0f));
-//  glm::mat4 Model = glm::scale(glm::mat4(1.0f), glm::vec3(0.5f));
-//  return Projection * View * Model;
-// }
-
-glm::vec4 clipToNDC(glm::vec4 clip)
-{
-  float w = clip[3];
-  glm::vec4 ndc;
-  if (w!=0.0) {
-    ndc = glm::vec4(
-      clip[0]/w, clip[1]/w, clip[2]/w, w
-    );
-  }
-  return ndc;
-}
-
-glm::vec4 ndcToWindow(glm::vec4 point, float windowWidth, float windowHeight)
-{
-  float xNDC = point[0];
-  float yNDC = point[1];
-  float zNDC = point[2];
-  float wNDC = point[3];
-
-  // Hack to make sure right and bottom edges are really clipped
-  // to prevent drawing outside viewport
-//  windowWidth = windowWidth-1;
-//  windowHeight = windowHeight-1;
-
-  int xWindow = (windowWidth/2*xNDC + windowWidth/2);
-  int yWindow = ((-yNDC)*windowHeight/2 + windowHeight/2);
-  float zWindow = zNDC;
-  return glm::vec4(xWindow, yWindow, zWindow, wNDC);
-}
 
 //------------------------------------------------------------------------------
 //  GameImpl Definition
@@ -308,7 +270,7 @@ void GameImpl::stopTimer() {
 
 void GameImpl::createMenus()
 {
-  _mainMenu.add("Reset\tR", MIReset ) ;
+  _mainMenu.add("Reset to origin\tR", MIReset ) ;
   _mainMenu.add("Open OBJ...", MIOpenOBJ ) ;
   _mainMenu.addSeparator() ;
   _mainMenu.add("Exit", MIExit ) ;
@@ -827,6 +789,7 @@ void GameImpl::createScaledMesh(vector<Triangle>& sourceMesh)
   _scaledMesh.clear();
   for (size_t i=0; i<sourceMesh.size(); ++i) {
     Triangle t = sourceMesh[i];
+    t.color = SOLID_COLOR;
     t.scale(_scale);
     _scaledMesh.push_back(t);
   }
@@ -1059,20 +1022,24 @@ void GameImpl::drawWorld(HDC hdc)
     for (size_t i=0; i<clippedTriangles.size(); ++i) {
       Triangle triangle = clippedTriangles[i];
 
-      glm::vec4 ndc1 = clipToNDC(triangle.vertex(0).pos.array<glm::vec4>());
-      glm::vec4 ndc2 = clipToNDC(triangle.vertex(1).pos.array<glm::vec4>());
-      glm::vec4 ndc3 = clipToNDC(triangle.vertex(2).pos.array<glm::vec4>());
+      // Go into normalized device coordinates (NDC)
+      triangle.perspectiveDivide();
 
       float xprod = 0;
       if (_backfaceCullingOn) {
-        if ((xprod=Graphics3D::crossProduct2D<glm::vec4>(ndc1, ndc2, ndc3))<0) {
+        xprod = Graphics3D::crossProduct2D<Vector4f>(
+          triangle.vertex(0).pos,
+          triangle.vertex(1).pos,
+          triangle.vertex(2).pos
+        );
+        if (xprod<0) {
           continue;
         }
       }
 
-      glm::vec4 win1 = ndcToWindow(ndc1, _clientWidth, _clientHeight);
-      glm::vec4 win2 = ndcToWindow(ndc2, _clientWidth, _clientHeight);
-      glm::vec4 win3 = ndcToWindow(ndc3, _clientWidth, _clientHeight);
+      G3D::ndcToWindow(triangle[0].pos, _clientWidth, _clientHeight);
+      G3D::ndcToWindow(triangle[1].pos, _clientWidth, _clientHeight);
+      G3D::ndcToWindow(triangle[2].pos, _clientWidth, _clientHeight);
 
 //      static bool runOnce = false;
 //      if (!runOnce && i==0) {
@@ -1094,36 +1061,14 @@ void GameImpl::drawWorld(HDC hdc)
 //        printf("xprod=%f\n", xprod);
 //      }
 
-      const float x1 = win1[0], y1 = win1[1], w1 = win1[3];
-      const float x2 = win2[0], y2 = win2[1], w2 = win2[3];
-      const float x3 = win3[0], y3 = win3[1], w3 = win3[3];
+      TriangleDrawer drawer(&zbuffer);
 
       if (_drawType==DrawSolid) {
-        Graphics3D::fillTriangle(screenImageData,
-                                 x1, y1,
-                                 x2, y2,
-                                 x3, y3,
-                                 t->color);
+        drawer.drawMode = SOLID_COLOR;
+        drawer.triangle(screenImageData, triangle);
       }
 
-      else if (_drawType==DrawAffine) {
-        ImageData* textureData = &_textureImageDatas[_textureID];
-        if (-1 != t->textureID) {
-          if (_loader.textures.count(t->textureID)) {
-            ImageData* tmptextureData = &(_loader.textures[t->textureID]);
-            if (tmptextureData) {
-              textureData = tmptextureData;
-            }
-          }
-        }
-        Graphics3D::affineTriangle(screenImageData,
-                                   x1, y1, triangle.u(0), triangle.v(0),
-                                   x2, y2, triangle.u(1), triangle.v(1),
-                                   x3, y3, triangle.u(2), triangle.v(2),
-                                   *textureData);
-      }
-
-      else if (_drawType==DrawPerspectiveCorrect) {
+      else {
         ImageData* textureData = &_textureImageDatas[_textureID];
         if (-1 != t->textureID) {
           if (_loader.textures.count(t->textureID)) {
@@ -1134,22 +1079,19 @@ void GameImpl::drawWorld(HDC hdc)
           }
         }
         if (textureData) {
-           Graphics3D::texturedTriangle(screenImageData,
-                                      x1, y1, w1, triangle.u(0), triangle.v(0),
-                                      x2, y2, w2, triangle.u(1), triangle.v(1),
-                                      x3, y3, w3, triangle.u(2), triangle.v(2),
-                                      *textureData,
-                                      (_zbufferOn ? &zbuffer:0));
-
+          drawer.textureImageData = textureData;
+          if (_drawType == DrawAffine) {
+            drawer.drawMode = TriangleDrawer::DRAW_AFFINE;
+          } else {
+            drawer.drawMode = TriangleDrawer::DRAW_PERSPECTIVE;
+          }
+          drawer.triangle(screenImageData, triangle);
         }
       }
 
       if (_drawWireframe) {
-        Graphics3D::triangleWire(screenImageData,
-                                 win1[0], win1[1],
-                                 win2[0], win2[1],
-                                 win3[0], win3[1],
-                                 ImageData::makePixel(0, 255, 255));
+        drawer.wireframeTriangle(screenImageData, triangle,
+                                ImageData::makePixel(0, 255, 255));
       }
     }
   } // for mesh.size()

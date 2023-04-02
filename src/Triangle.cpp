@@ -1,6 +1,7 @@
 #include "Triangle.h"
 #include <glm/vec4.hpp>
 #include <glm/gtx/rotate_vector.hpp>
+#include "Graphics3D.h"
 
 using namespace al::graphics;
 
@@ -68,4 +69,11 @@ void Triangle::scale(float f)
   vertices[0] = vertices[0].scaleXYZ(f);
   vertices[1] = vertices[1].scaleXYZ(f);
   vertices[2] = vertices[2].scaleXYZ(f);
+}
+
+void Triangle::perspectiveDivide()
+{
+  G3D::perspectiveDivide(vertices[0].pos);
+  G3D::perspectiveDivide(vertices[1].pos);
+  G3D::perspectiveDivide(vertices[2].pos);
 }

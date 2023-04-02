@@ -26,7 +26,7 @@ public:
     // UV coordinates start from the bottom-left of a texture
     // But ImageData coordinates start from the top-left
     // https://stackoverflow.com/a/33324409/1645045
-    v = 1.0f-v;
+    v = 1.0-v;
 
     const int imageW = (int) imageData.width();
     const int imageH = (int) imageData.height();
@@ -72,44 +72,39 @@ public:
     //   ay by ]
     return ax * by - ay * bx;
   }
-  
-  static void bline(ImageData& imageData, 
+
+  template <class Arr>
+  static Arr& perspectiveDivide(Arr& clipCoords)
+  {
+    const float w = clipCoords[3];
+    if (w) {
+      clipCoords[0] = clipCoords[0] / w;
+      clipCoords[1] = clipCoords[1] / w;
+      clipCoords[2] = clipCoords[2] / w;
+    }
+    return clipCoords;
+  }
+
+  template <class Arr>
+  static Arr ndcToWindow(Arr& point, float windowWidth, float windowHeight)
+  {
+    const float xNDC = point[0];
+    const float yNDC = point[1];
+
+    // Hack to make sure right and bottom edges are really clipped
+    // to prevent drawing outside viewport
+    //  windowWidth = windowWidth-1;
+    //  windowHeight = windowHeight-1;
+
+    const int xWindow = (windowWidth/2*xNDC + windowWidth/2);
+    const int yWindow = ((-yNDC)*windowHeight/2 + windowHeight/2);
+    point[0] = xWindow;
+    point[1] = yWindow;
+    return point;
+  }
+
+  static void bline(ImageData& imageData,
                     int x0, int y0, int x1, int y1, u32 rgba=0);
-
-  static void triangleWire(ImageData& imageData,
-                           int x1, int y1, int x2, int y2, int x3, int y3, 
-                           u32 rgba);
-                           
-  static void fillTriangle(ImageData& imageData, 
-                           int x1, int y1, int x2, int y2, int x3, int y3,
-                           u32 rgba);
-
-  static inline void affineScanLine(ImageData& imageData,
-                                    int y,
-                                    const Vertex3f& left,
-                                    const Vertex3f& right,
-                                    ImageData& textureImageData,
-                                    Grid<float>* zbuffer=0);
-
-  static void affineTriangle(ImageData& imageData, 
-                             float x1, float y1, float u1, float v1,
-                             float x2, float y2, float u2, float v2,
-                             float x3, float y3, float u3, float v3,
-                             ImageData& textureImageData);
-
-  static inline void texturedScanLine(ImageData& imageData,
-                                      int y,
-                                      const Vertex3f& left,
-                                      const Vertex3f& right,
-                                      ImageData& textureImageData,
-                                      Grid<float>* zbuffer=0);
-
-  static void texturedTriangle(ImageData& imageData, 
-                               float x1, float y1, float w1, float u1, float v1,
-                               float x2, float y2, float w2, float u2, float v2,
-                               float x3, float y3, float w3, float u3, float v3,
-                               ImageData& textureImageData,
-                               Grid<float>* zbuffer=0);
 
 };
 
