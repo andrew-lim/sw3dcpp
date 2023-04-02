@@ -52,7 +52,7 @@ inline void TriangleDrawer::scanline(ImageData& imageData,
       }
       const uint8_t* rgba = (uint8_t*) &pixel;
       const uint8_t alpha = rgba[3];
-      if (alpha == 255) {
+      if (alpha) {
         imageData.pixel(x, y) = pixel;
         if (depthBuffer) {
           depthBuffer->unsafeSet(x, y, depth);

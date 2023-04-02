@@ -68,6 +68,7 @@ void OBJLoader::loadBMP(const std::string& path, ImageData& imageData)
   uint32_t result = bmp.getBits(imgbytes);
   if (result) {
     imageData.copy(imgbytes, bmp.getWidth(), bmp.getHeight());
+    imageData.fillAlpha(255);
   }
   delete[] imgbytes;
   if (!result) {

@@ -380,7 +380,6 @@ void GameImpl::loadImages()
 
     // PNG
     if (path.find(".png") != std::string::npos) {
-
       loader.loadPNG(path, textureData);
       _textureImageDatas.push_back(textureData);
     }
@@ -389,7 +388,6 @@ void GameImpl::loadImages()
       loader.loadBMP(path, textureData);
       _textureImageDatas.push_back(textureData);
     }
-
   }
 }
 

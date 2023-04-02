@@ -90,7 +90,8 @@ public:
             u32 srcX=0, u32 srcY=0, u32 srcW=0, u32 srcH=0);
 
   void swapEndianess();
-                   
+  void fillAlpha(u8 alpha);
+
 }; // class ImageData
 } // namespace al
 } // namespace graphics

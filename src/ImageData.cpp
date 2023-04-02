@@ -115,3 +115,12 @@ void ImageData::swapEndianess()
     data32[i] = newPixel;
   }
 }
+
+void ImageData::fillAlpha(u8 alpha)
+{
+  u32* data32 = (u32*)_data;
+  for (u32 i=0; i<_w*_h; ++i) {
+    u8* bytes = (u8*)(&data32[i]);
+    bytes[3] = alpha;
+  }
+}
