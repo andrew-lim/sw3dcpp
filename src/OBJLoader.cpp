@@ -179,8 +179,7 @@ void OBJLoader::load(const std::string& path, float scale)
       Triangle t(
         x1*scale, y1*scale, z1*scale,
         x2*scale, y2*scale, z2*scale,
-        x3*scale, y3*scale, z3*scale,
-        ImageData::makeLittlePixel(0, 255, 0)
+        x3*scale, y3*scale, z3*scale
       );
       t.setTexUVs(u1, v1, u2, v2, u3, v3);
 
