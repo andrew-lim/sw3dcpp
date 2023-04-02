@@ -16,10 +16,10 @@ void TriangleDrawer::wireframeTriangle(ImageData& imageData,
 
 inline void TriangleDrawer::scanline(ImageData& imageData,
                                      const Triangle& triangle,
-                                     int y,
                                      const Vertex4f& left,
                                      const Vertex4f& right)
 {
+  const int y = left.y();
   const int leftx = left.x();
   const int rightx = right.x();
   const int dx = rightx - leftx;
@@ -128,7 +128,7 @@ void TriangleDrawer::triangle(ImageData& imageData, const Triangle& triangle)
       const int ysteps = y - topy;
       const Vertex4f left = top + leftStep * ysteps;
       const Vertex4f right = top + rightStep * ysteps;
-      scanline(imageData, triangle, y, left, right);
+      scanline(imageData, triangle, left, right);
     }
   }
 
@@ -142,7 +142,7 @@ void TriangleDrawer::triangle(ImageData& imageData, const Triangle& triangle)
       const int ysteps  = y - midy;
       const Vertex4f left = mid + leftStep * ysteps;
       const Vertex4f right = mid2 + rightStep * ysteps;
-      scanline(imageData, triangle, y, left, right);
+      scanline(imageData, triangle, left, right);
     }
   }
 } // texturedTriangle

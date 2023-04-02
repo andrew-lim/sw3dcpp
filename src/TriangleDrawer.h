@@ -34,7 +34,6 @@ public:
 
   void scanline(ImageData& imageData,
                 const Triangle& triangle,
-                int y,
                 const Vertex4f& left,
                 const Vertex4f& right);
 
