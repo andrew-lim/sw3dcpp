@@ -1,16 +1,18 @@
 #include "Triangle.h"
+#include <glm/vec4.hpp>
 #include <glm/gtx/rotate_vector.hpp>
+
 using namespace al::graphics;
 
 Triangle::Triangle()
-: color()
+: color(0)
 , textureID(-1)
 {
 
 }
 
 Triangle::Triangle(const Vertex4f& a, const Vertex4f& b, const Vertex4f& c)
-: color()
+: color(0)
 , textureID(-1)
 {
   vertices[0] = a;
