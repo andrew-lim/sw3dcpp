@@ -103,9 +103,6 @@ public:
     return point;
   }
 
-  static void bline(ImageData& imageData,
-                    int x0, int y0, int x1, int y1, u32 rgba=0);
-
 };
 
 typedef Graphics3D G3D;

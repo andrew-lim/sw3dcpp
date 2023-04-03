@@ -1,4 +1,5 @@
 #include "TriangleDrawer.h"
+#include "LineDrawer.h"
 #include "Graphics3D.h"
 #include <algorithm>
 
@@ -9,9 +10,9 @@ void TriangleDrawer::wireframeTriangle(ImageData& imageData,
                                        const Triangle& t,
                                        u32 rgba)
 {
-  G3D::bline(imageData, t[0].x(), t[0].y(), t[1].x(), t[1].y(), rgba);
-  G3D::bline(imageData, t[1].x(), t[1].y(), t[2].x(), t[2].y(), rgba);
-  G3D::bline(imageData, t[2].x(), t[2].y(), t[0].x(), t[0].y(), rgba);
+  LineDrawer::bline(imageData, t[0].x(), t[0].y(), t[1].x(), t[1].y(), rgba);
+  LineDrawer::bline(imageData, t[1].x(), t[1].y(), t[2].x(), t[2].y(), rgba);
+  LineDrawer::bline(imageData, t[2].x(), t[2].y(), t[0].x(), t[0].y(), rgba);
 }
 
 inline void TriangleDrawer::scanline(ImageData& imageData,
