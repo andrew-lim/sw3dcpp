@@ -39,12 +39,8 @@ vector<Triangle> ClipSpace::clip(const Triangle& triangle,
     }
   }
 
-  if (3==outsidePoints.size()) {
-    // Triangle is outside this plane
-  }
-
-  else if (3==insidePoints.size()) {
-    // Triangle is completely inside this plane
+  // Triangle is completely inside
+  if (3==insidePoints.size()) {
     triangles.push_back(triangle);
   }
 
