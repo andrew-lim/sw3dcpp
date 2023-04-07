@@ -63,6 +63,7 @@ private:
     , MIOpenOBJ
     , MINothing
     , MISolid
+    , MISolidRainbow
     , MIAffine
     , MIPerspectiveCorrect
     , MIWireframe
@@ -104,14 +105,7 @@ private:
     , MIAbout
   };
 
-  enum DrawType {
-    DrawPerspectiveCorrect = 0,
-    DrawAffine = 1,
-    DrawSolid = 2,
-    DrawNothing = 3
-  };
-
-  int _drawType = DrawPerspectiveCorrect;
+  bool _drawWireframeOnly;
   bool _drawWireframe;
   int _textureID;
 
@@ -119,7 +113,7 @@ private:
   LRESULT  handleMessage( UINT, WPARAM, LPARAM );
   void     repaint() ;
   void     createDefaultMesh();
-  void     createScaledMesh(vector<Triangle>&);
+  void     createScaledMesh(vector<Triangle>&, bool);
   void     drawFPS(HDC hdc);
   void     drawWorld(HDC hdc);
   void updateGame();
@@ -171,6 +165,7 @@ private:
   static const int CLIP_NEAR_AND_FAR = 1;
   static const int CLIP_ALL = 2;
   int _clipMode = CLIP_NEAR_ONLY;
+  TriangleDrawer _triangleDrawer;
 };
 
 //------------------------------------------------------------------------------
@@ -204,7 +199,9 @@ GameImpl::GameImpl()
   , _loader(true)
 {
   _textureID = 0;
+  _drawWireframeOnly = false;
   _drawWireframe = true;
+  _triangleDrawer.drawMode = TriangleDrawer::DRAW_PERSPECTIVE;
 //  _backgroundColor=ImageData::makeLittlePixel(64, 145, 250);
 
   srand( (unsigned int)time(0) );
@@ -277,6 +274,7 @@ void GameImpl::createMenus()
 
   _optionsMenu.add("Nothing / Wireframe Only", MINothing);
   _optionsMenu.add("Solid", MISolid);
+  _optionsMenu.add("Solid Rainbow", MISolidRainbow);
   _optionsMenu.add("Affine", MIAffine);
   _optionsMenu.add("Perspective Correct", MIPerspectiveCorrect);
   _optionsMenu.addSeparator();
@@ -416,7 +414,7 @@ std::string shortPathName(const wchar_t* path)
   return utf8_encode(shortpath);
 }
 
-static std::wstring filepath = L"Test Cube";
+static std::wstring filepath = L"Default Cube";
 
 void GameImpl::loadOBJ(const wchar_t* path)
 {
@@ -432,7 +430,7 @@ void GameImpl::loadOBJ(const wchar_t* path)
     stopTimer();
     _loadedMesh = _loader.triangles;
     _scale = _oldScale = 1;
-    createScaledMesh(_loadedMesh);
+    createScaledMesh(_loadedMesh, false);
     resetGame();
   }
   catch (exception& ex) {
@@ -501,7 +499,7 @@ LRESULT GameImpl::handleMessage( UINT msg, WPARAM wParam, LPARAM lParam )
 
       if (wID == MIMeshDefault) {
         _loadedMesh.clear();
-        createScaledMesh(_defaultMesh);
+        createScaledMesh(_defaultMesh, true);
         _scale = 1;
         resetGame();
       }
@@ -518,20 +516,28 @@ LRESULT GameImpl::handleMessage( UINT msg, WPARAM wParam, LPARAM lParam )
           break;
 
         case MINothing:
-          _drawType = DrawNothing;
+          _drawWireframeOnly = true;
           _drawWireframe = true;
           break;
 
         case MISolid:
-          _drawType = DrawSolid;
+          _drawWireframeOnly = false;
+          _triangleDrawer.drawMode = TriangleDrawer::DRAW_SOLID;
+          break ;
+
+          case MISolidRainbow:
+          _drawWireframeOnly = false;
+          _triangleDrawer.drawMode = TriangleDrawer::DRAW_RGB_SHADED;
           break ;
 
         case MIPerspectiveCorrect:
-          _drawType = DrawPerspectiveCorrect;
+          _drawWireframeOnly = false;
+          _triangleDrawer.drawMode = TriangleDrawer::DRAW_PERSPECTIVE;
           break ;
 
         case MIAffine:
-          _drawType = DrawAffine;
+          _drawWireframeOnly = false;
+          _triangleDrawer.drawMode = TriangleDrawer::DRAW_AFFINE;
           break ;
 
         case MIWireframe:
@@ -630,10 +636,11 @@ LRESULT GameImpl::handleMessage( UINT msg, WPARAM wParam, LPARAM lParam )
 
       if ( hMenu == _optionsMenu )
       {
-        _optionsMenu.setMenuItemChecked( MINothing, _drawType == DrawNothing );
-        _optionsMenu.setMenuItemChecked( MISolid, _drawType == DrawSolid );
-        _optionsMenu.setMenuItemChecked( MIAffine, _drawType == DrawAffine );
-        _optionsMenu.setMenuItemChecked( MIPerspectiveCorrect, _drawType == DrawPerspectiveCorrect );
+        _optionsMenu.setMenuItemChecked( MINothing, _drawWireframeOnly );
+        _optionsMenu.setMenuItemChecked( MISolid, _triangleDrawer.drawMode == TriangleDrawer::DRAW_SOLID );
+        _optionsMenu.setMenuItemChecked( MISolidRainbow, _triangleDrawer.drawMode == TriangleDrawer::DRAW_RGB_SHADED );
+        _optionsMenu.setMenuItemChecked( MIAffine, _triangleDrawer.drawMode == TriangleDrawer::DRAW_AFFINE );
+        _optionsMenu.setMenuItemChecked( MIPerspectiveCorrect, _triangleDrawer.drawMode == TriangleDrawer::DRAW_PERSPECTIVE );
         _optionsMenu.setMenuItemChecked( MIWireframe, _drawWireframe );
         _optionsMenu.setMenuItemChecked( MIZBuffer, _zbufferOn );
         _optionsMenu.setMenuItemChecked( MIBackfacCulling, _backfaceCullingOn );
@@ -732,62 +739,65 @@ void GameImpl::createDefaultMesh()
 
   // South
   t = Triangle(leftX, topY, frontZ, leftX, bottomY, frontZ, rightX, topY, frontZ, pink);
-  t.setTexUVs(0.0, 0.0, 0.0, -2.0, 2.0, -0.0);
+  t.setTexUVs(0.0, 0.0, 0.0, -1.0, 1.0, -0.0);
   _defaultMesh.push_back(t);
 
   t = Triangle(leftX, bottomY, frontZ, rightX, bottomY, frontZ, rightX, topY, frontZ, pink);
-  t.setTexUVs(0.0, -2.0, 2.0, -2.0, 2.0, -0.0);
+  t.setTexUVs(0.0, -1.0, 1.0, -1.0, 1.0, -0.0);
   _defaultMesh.push_back(t);
 
   // East
   t = Triangle(rightX, topY, frontZ, rightX, bottomY, frontZ, rightX, topY, backZ, green);
-  t.setTexUVs(0.0, 0.0, 0.0, -2.0, 2.0, 0.0);
+  t.setTexUVs(0.0, 0.0, 0.0, -1.0, 1.0, 0.0);
   _defaultMesh.push_back(t);
   t = Triangle(rightX, bottomY, frontZ, rightX, bottomY, backZ, rightX, topY, backZ, green);
-  t.setTexUVs(0.0, -2.0, 2.0, -2.0, 2.0, 0.0);
+  t.setTexUVs(0.0, -1.0, 1.0, -1.0, 1.0, 0.0);
   _defaultMesh.push_back(t);
 
   // North
   t = Triangle(rightX, topY, backZ, rightX, bottomY, backZ, leftX, topY, backZ, blue);
-  t.setTexUVs(0.0, 0.0, 0.0, -2.0, 2.0, 0.0);
+  t.setTexUVs(0.0, 0.0, 0.0, -1.0, 1.0, 0.0);
   _defaultMesh.push_back(t);
   t = Triangle(rightX, bottomY, backZ, leftX, bottomY, backZ, leftX, topY, backZ, blue);
-  t.setTexUVs(0.0, -2.0, 2.0, -2.0, 2.0, 0.0);
+  t.setTexUVs(0.0, -1.0, 1.0, -1.0, 1.0, 0.0);
   _defaultMesh.push_back(t);
 
   // West
   t = Triangle(leftX, topY, backZ, leftX, bottomY, backZ, leftX, topY, frontZ, red);
-  t.setTexUVs(0.0, 0.0, 0.0, -2.0, 2.0, 0.0);
+  t.setTexUVs(0.0, 0.0, 0.0, -1.0, 1.0, 0.0);
   _defaultMesh.push_back(t);
   t = Triangle(leftX, bottomY, backZ, leftX, bottomY, frontZ, leftX, topY, frontZ, red);
-  t.setTexUVs(0.0, -2.0, 2.0, -2.0, 2.0, 0.0);
+  t.setTexUVs(0.0, -1.0, 1.0, -1.0, 1.0, 0.0);
   _defaultMesh.push_back(t);
 
   // Top
   t = Triangle(leftX, topY, backZ, leftX, topY, frontZ, rightX, topY, backZ, yellow);
-  t.setTexUVs(0.0, 0.0, 0.0, -2.0, 2.0, 0.0);
+  t.setTexUVs(0.0, 0.0, 0.0, -1.0, 1.0, 0.0);
   _defaultMesh.push_back(t);
   t = Triangle(leftX, topY, frontZ, rightX, topY, frontZ, rightX, topY, backZ, yellow);
-  t.setTexUVs(0.0, -2.0, 2.0, -2.0, 2.0, 0.0);
+  t.setTexUVs(0.0, -1.0, 1.0, -1.0, 1.0, 0.0);
   _defaultMesh.push_back(t);
 
   // Bottom
   t = Triangle(leftX, bottomY, frontZ, leftX, bottomY, backZ, rightX, bottomY, frontZ, violet);
-  t.setTexUVs(0.0, 0.0, 0.0, -2.0, 2.0, 0.0);
+  t.setTexUVs(0.0, 0.0, 0.0, -1.0, 1.0, 0.0);
   _defaultMesh.push_back(t);
   t = Triangle(leftX, bottomY, backZ, rightX, bottomY, backZ, rightX, bottomY, frontZ, violet);
-  t.setTexUVs(0.0, -2.0, 2.0, -2.0, 2.0, 0.0);
+  t.setTexUVs(0.0, -1.0, 1.0, -1.0, 1.0, 0.0);
   _defaultMesh.push_back(t);
 
-  createScaledMesh(_defaultMesh);
+  createScaledMesh(_defaultMesh, true);
 }
 
-void GameImpl::createScaledMesh(vector<Triangle>& sourceMesh)
+void GameImpl::createScaledMesh(vector<Triangle>& sourceMesh,
+                                bool isDefaultMesh)
 {
   _scaledMesh.clear();
   for (size_t i=0; i<sourceMesh.size(); ++i) {
     Triangle t = sourceMesh[i];
-    t.color = SOLID_COLOR;
+    if (!isDefaultMesh) {
+      t.color= SOLID_COLOR;
+    }
     t.scale(_scale);
     _scaledMesh.push_back(t);
   }
@@ -959,7 +969,12 @@ void GameImpl::drawWorld(HDC hdc)
 
   if (_oldScale != _scale) {
     printf("Scale changed, recreating scaled mesh\n");
-    createScaledMesh(_loadedMesh.empty() ? _defaultMesh : _loadedMesh);
+    if (_loadedMesh.empty()) {
+      createScaledMesh(_defaultMesh, true);
+    }
+    else {
+      createScaledMesh(_loadedMesh, false);
+    }
   }
   _mesh = _scaledMesh;
   for (size_t i=0; i<_mesh.size(); i++) {
@@ -998,6 +1013,11 @@ void GameImpl::drawWorld(HDC hdc)
     Vertex4f clipVertex3 = Vertex4f(Vector4f(clip3), t->uv(2));
     Triangle triangleToClip(clipVertex1, clipVertex2, clipVertex3);
     triangleToClip.color = t->color;
+    if (_triangleDrawer.drawMode == TriangleDrawer::DRAW_RGB_SHADED) {
+      triangleToClip.vertices[0].rgb = Vector3f(200, 0, 0);
+      triangleToClip.vertices[1].rgb = Vector3f(0, 200, 0);
+      triangleToClip.vertices[2].rgb = Vector3f(0, 0, 200);
+    }
 
     vector<Triangle> trianglesToClip;
     trianglesToClip.push_back(triangleToClip);
@@ -1019,6 +1039,7 @@ void GameImpl::drawWorld(HDC hdc)
 
     for (size_t i=0; i<clippedTriangles.size(); ++i) {
       Triangle triangle = clippedTriangles[i];
+      triangle.color = t->color;
 
       // Go into normalized device coordinates (NDC)
       triangle.perspectiveDivide();
@@ -1039,11 +1060,15 @@ void GameImpl::drawWorld(HDC hdc)
       G3D::ndcToWindow(triangle[1].pos, _clientWidth, _clientHeight);
       G3D::ndcToWindow(triangle[2].pos, _clientWidth, _clientHeight);
 
-      TriangleDrawer drawer(_zbufferOn ? &zbuffer : 0);
+      _triangleDrawer.depthBuffer = _zbufferOn ? &zbuffer : 0;
 
-      if (_drawType==DrawSolid) {
-        drawer.drawMode = SOLID_COLOR;
-        drawer.triangle(screenImageData, triangle);
+      if (_drawWireframeOnly) {
+
+      }
+
+      else if (_triangleDrawer.drawMode == TriangleDrawer::DRAW_SOLID ||
+               _triangleDrawer.drawMode == TriangleDrawer::DRAW_RGB_SHADED ) {
+        _triangleDrawer.triangle(screenImageData, triangle);
       }
 
       else {
@@ -1057,19 +1082,14 @@ void GameImpl::drawWorld(HDC hdc)
           }
         }
         if (textureData) {
-          drawer.textureImageData = textureData;
-          if (_drawType == DrawAffine) {
-            drawer.drawMode = TriangleDrawer::DRAW_AFFINE;
-          } else {
-            drawer.drawMode = TriangleDrawer::DRAW_PERSPECTIVE;
-          }
-          drawer.triangle(screenImageData, triangle);
+          _triangleDrawer.textureImageData = textureData;
+          _triangleDrawer.triangle(screenImageData, triangle);
         }
       }
 
       if (_drawWireframe) {
-        drawer.wireframeTriangle(screenImageData, triangle,
-                                ImageData::makePixel(0, 255, 255));
+        _triangleDrawer.wireframeTriangle(screenImageData, triangle,
+                                          ImageData::makePixel(0, 255, 255));
       }
     }
   } // for mesh.size()

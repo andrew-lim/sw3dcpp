@@ -10,31 +10,43 @@ template <class T>
 class Vector2g
 {
 public:
-  T x, y;
-  Vector2g(T x=0, T y=0) : x(x) , y(y) {}
-  T get(int i) const { return i==0?x:y;}
-  T u() const { return x; }
-  T v() const { return y; }
-  Vector2g add(Vector2g r) const { return Vector2g(x+r.x, y+r.y); }
-  Vector2g add(T r) const { return Vector2g(x + r, y + r); }
-  Vector2g sub(Vector2g r) const { return Vector2g(x - r.x, y - r.y); }
-  Vector2g sub(T r) const { return Vector2g(x - r, y - r); }
-  Vector2g mul(Vector2g r) const { return Vector2g(x * r.x, y * r.y); }
-  Vector2g mul(T r) const { return Vector2g(x * r, y * r); }
-  Vector2g mul(T scaleX, T scaleY) { return Vector2g(x * scaleX, y * scaleY); }
-  Vector2g div(Vector2g r) const { return Vector2g(x / r.x, y / r.y); }
-  Vector2g div(T r) const { return Vector2g(x / r, y / r); }
-  Vector2g abs() const { return Vector2g(std::abs(x), std::abs(y)); }
-  bool equals(const Vector2g& r) const { return x==r.x && y==r.y; }
+  T values[2];
+  Vector2g(T x=0, T y=0) {values[0]=x; values[1]=y;}
+  const T& x() const { return values[0]; }
+  const T& y() const { return values[1]; }
+  const T& u() const { return values[0]; }
+  const T& v() const { return values[1]; }
+  T& x() { return values[0]; }
+  T& y() { return values[1]; }
+  T& u() { return values[0]; }
+  T& v() { return values[1]; }
+  Vector2g add(Vector2g r) const { return Vector2g(x()+r.x(), y()+r.y()); }
+  Vector2g add(T r) const { return Vector2g(x() + r, y() + r); }
+  Vector2g sub(Vector2g r) const { return Vector2g(x() - r.x(), y() - r.y()); }
+  Vector2g sub(T r) const { return Vector2g(x() - r, y() - r); }
+  Vector2g mul(Vector2g r) const { return Vector2g(x() * r.x(), y() * r.y()); }
+  Vector2g mul(T r) const { return Vector2g(x() * r, y() * r); }
+  Vector2g mul(T sx, T sy) const {return Vector2g(x()*sx, y()*sy);}
+  Vector2g div(Vector2g r) const { return Vector2g(x() / r.x(), y() / r.y());}
+  Vector2g div(T r) const { return Vector2g(x() / r, y() / r); }
+  Vector2g abs() const { return Vector2g(std::abs(x()), std::abs(y())); }
+  bool equals(const Vector2g& r) const { return x()==r.x() && y()==r.y(); }
   bool operator==(const Vector2g& r) const { return equals(r); }
   bool operator!=(const Vector2g& r) const { return !equals(r); }
 
   Vector2g lerp(const Vector2g& dest, T lerpFactor) const
   {
     return Vector2g(
-      x+(dest.x-x)*lerpFactor,
-      y+(dest.y-y)*lerpFactor
+      x()+(dest.x()-x())*lerpFactor,
+      y()+(dest.y()-y())*lerpFactor
     );
+  }
+
+  Vector2g& operator/=(float f)
+  {
+    x() /= f;
+    y() /= f;
+    return *this;
   }
 
 }; // class Vector2g

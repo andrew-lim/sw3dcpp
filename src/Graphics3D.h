@@ -49,6 +49,14 @@ public:
     return imageData.pixel(x,y);
   }
 
+  static u32 colorForRGB(int r, int g, int b)
+  {
+    r = r % 256;
+    g = g % 256;
+    b = b % 256;
+    return ImageData::makeLittlePixel(r, g, b, 255);
+  }
+
   /**
    * Calculates the cross-product of 2 vectors but ignores the Z component
    * Should be used in NDC space

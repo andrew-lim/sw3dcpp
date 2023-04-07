@@ -21,18 +21,18 @@ void testVector4f()
 {
   printf("--- testVector4f() start\n");
   Vector4f a(4, 3, 2, 1);
-  if (a.x!=4 || a.y!=3 || a.z!=2 || a.w!=1) {
+  if (a.x()!=4 || a.y()!=3 || a.z()!=2 || a.w()!=1) {
     throw std::runtime_error("testVector4f() failed a is wrong");
   }
   Vector4f b = a.mul(4);
   Vector4f c = b.div(2);
-  if (c.x!=8 || c.y!=6 || c.z!=4 || c.w!=2) {
+  if (c.x()!=8 || c.y()!=6 || c.z()!=4 || c.w()!=2) {
     throw std::runtime_error("testVector4f() failed C is wrong");
   }
   Vector4f d = Vector4f(4, 3, 2, 1);
   Vector4f e = d.mul(Vector4f(4, 4, 4, 4));
   Vector4f f = e.div(Vector4f(2, 2, 2, 2));
-  if (f.x!=8 || f.y!=6 || f.z!=4 || f.w!=2) {
+  if (f.x()!=8 || f.y()!=6 || f.z()!=4 || f.w()!=2) {
     throw std::runtime_error("testVector4f() failed e is wrong");
   }
   Vector4f g(8, 6, 4, 2);

@@ -1,6 +1,4 @@
 #include "Triangle.h"
-#include <glm/vec4.hpp>
-#include <glm/gtx/rotate_vector.hpp>
 #include "Graphics3D.h"
 
 using namespace al::graphics;
@@ -9,7 +7,6 @@ Triangle::Triangle()
 : color(0)
 , textureID(-1)
 {
-
 }
 
 Triangle::Triangle(const Vertex4f& a, const Vertex4f& b, const Vertex4f& c)
@@ -44,31 +41,24 @@ void Triangle::setTexUVs(float u1, float v1,
 
 void Triangle::rotateX(float rad)
 {
-  glm::vec4 rot0 = glm::rotateX(vertices[0].pos.array<glm::vec4>(), rad);
-  glm::vec4 rot1 = glm::rotateX(vertices[1].pos.array<glm::vec4>(), rad);
-  glm::vec4 rot2 = glm::rotateX(vertices[2].pos.array<glm::vec4>(), rad);
-
-  vertices[0].pos = Vector4f(rot0[0], rot0[1], rot0[2]);
-  vertices[1].pos = Vector4f(rot1[0], rot1[1], rot1[2]);
-  vertices[2].pos = Vector4f(rot2[0], rot2[1], rot2[2]);
+  vertices[0].pos = vertices[0].pos.rotateX(rad);
+  vertices[1].pos = vertices[1].pos.rotateX(rad);
+  vertices[2].pos = vertices[2].pos.rotateX(rad);
 }
 
 void Triangle::rotateY(float rad)
 {
-  glm::vec4 rot0 = glm::rotateY(vertices[0].pos.array<glm::vec4>(), rad);
-  glm::vec4 rot1 = glm::rotateY(vertices[1].pos.array<glm::vec4>(), rad);
-  glm::vec4 rot2 = glm::rotateY(vertices[2].pos.array<glm::vec4>(), rad);
-
-  vertices[0].pos = Vector4f(rot0[0], rot0[1], rot0[2]);
-  vertices[1].pos = Vector4f(rot1[0], rot1[1], rot1[2]);
-  vertices[2].pos = Vector4f(rot2[0], rot2[1], rot2[2]);
+  vertices[0].pos = vertices[0].pos.rotateY(rad);
+  vertices[1].pos = vertices[1].pos.rotateY(rad);
+  vertices[2].pos = vertices[2].pos.rotateY(rad);
 }
 
 void Triangle::scale(float f)
 {
-  vertices[0] = vertices[0].scaleXYZ(f);
-  vertices[1] = vertices[1].scaleXYZ(f);
-  vertices[2] = vertices[2].scaleXYZ(f);
+  const Vector4f scaleVector = Vector4f(f ,f, f, 1);
+  vertices[0].pos = vertices[0].pos.mul( scaleVector );
+  vertices[1].pos = vertices[1].pos.mul( scaleVector );
+  vertices[2].pos = vertices[2].pos.mul( scaleVector );
 }
 
 void Triangle::perspectiveDivide()

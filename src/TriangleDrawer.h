@@ -10,12 +10,12 @@ namespace al { namespace graphics {
 class TriangleDrawer
 {
 public:
-  static const int DRAW_SOLID = 0;
-  static const int DRAW_WIREFRAME = 1;
-  static const int DRAW_AFFINE = 2;
-  static const int DRAW_PERSPECTIVE = 3;
+  enum DrawMode {
+    DRAW_PERSPECTIVE, DRAW_SOLID, DRAW_WIREFRAME, DRAW_AFFINE,
+    DRAW_RGB_SHADED
+  };
 
-  int drawMode;
+  DrawMode drawMode;
   Grid<float>* depthBuffer;
   std::uint32_t color;
   ImageData* textureImageData;

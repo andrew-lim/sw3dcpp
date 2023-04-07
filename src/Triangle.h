@@ -37,29 +37,24 @@ public:
 
   float u(int ptindex) const
   {
-    return vertices[ptindex].uv.x;
+    return vertices[ptindex].uv.x();
   }
 
   float v(int ptindex) const
   {
-    return vertices[ptindex].uv.y;
+    return vertices[ptindex].uv.y();
   }
 
   float w(int ptindex) const
   {
-    return vertices[ptindex].pos.w;
+    return vertices[ptindex].pos.w();
   }
 
   void setTexUVs(float u1, float v1, float u2, float v2, float u3, float v3);
-
   void rotateX(float rad);
   void rotateY(float rad);
-
   void scale(float f);
-
   void perspectiveDivide();
-
-
 }; // class Triangle
 } // namespace al
 } // namespace graphics

@@ -47,8 +47,15 @@ inline void TriangleDrawer::scanline(ImageData& imageData,
           pixel = G3D::pixelAtUV(*textureImageData, tex.u(), tex.v());
           break;
         case DRAW_SOLID:
-        default:
           pixel = triangle.color;
+          break;
+        case DRAW_RGB_SHADED:
+        default:
+          pixel = G3D::colorForRGB(
+            (int)(tex.rgb.x()*w),
+            (int)(tex.rgb.y()*w),
+            (int)(tex.rgb.z()*w)
+          );
           break;
       }
       const uint8_t* rgba = (uint8_t*) &pixel;
@@ -69,17 +76,18 @@ void TriangleDrawer::triangle(ImageData& imageData, const Triangle& triangle)
   Vertex4f mid = triangle.vertices[1];
   Vertex4f bot = triangle.vertices[2];
 
-  if (drawMode == DRAW_PERSPECTIVE) {
-    top.uv = top.uv.div(top.pos.w);
-    mid.uv = mid.uv.div(mid.pos.w);
-    bot.uv = bot.uv.div(bot.pos.w);
-    top.pos.z = top.pos.z / top.pos.w;
-    mid.pos.z = mid.pos.z / mid.pos.w;
-    bot.pos.z = bot.pos.z / bot.pos.w;
-    top.pos.w = 1.0 / top.pos.w;
-    mid.pos.w = 1.0 / mid.pos.w;
-    bot.pos.w = 1.0 / bot.pos.w;
+  if (drawMode != DRAW_AFFINE) {
+    top.uv /= top.pos.w();
+    mid.uv /= mid.pos.w();
+    bot.uv /= bot.pos.w();
+    top.rgb /= top.pos.w();
+    mid.rgb /= mid.pos.w();
+    bot.rgb /= bot.pos.w();
   }
+
+  top.pos.w() = 1.0 / top.pos.w();
+  mid.pos.w() = 1.0 / mid.pos.w();
+  bot.pos.w() = 1.0 / bot.pos.w();
 
   // Sort the points vertically
   if (mid.y() < top.y()) {
