@@ -16,7 +16,7 @@
 #include <glm/vec3.hpp> // glm::vec3
 #include <glm/vec4.hpp> // glm::vec4
 #include <glm/mat4x4.hpp> // glm::mat4
-#include <glm/ext/matrix_transform.hpp> // glm::translate, glm::rotate, glm::scale
+#include <glm/ext/matrix_transform.hpp> // glm::translate,glm::rotate,glm::scale
 #include <glm/ext/matrix_clip_space.hpp> // glm::perspective
 #include <glm/ext/scalar_constants.hpp> // glm::pi
 #include <glm/gtx/string_cast.hpp>
@@ -80,8 +80,6 @@ private:
     , MI1366x768
     , MI1920x1080
     , MIShowFPS
-    , MIShowTriangleCount
-    , MIShowFileName
     , MIScale001
     , MIScale01
     , MIScale05
@@ -130,7 +128,8 @@ private:
   void showControls();
   void showAbout();
   LRESULT onDropFiles( WPARAM, LPARAM );
-  static void CALLBACK TimeProc(UINT uID, UINT uMsg, DWORD_PTR dwUser, DWORD_PTR d1, DWORD_PTR d2);
+  static void CALLBACK TimeProc(UINT uID, UINT uMsg, DWORD_PTR dwUser,
+                                DWORD_PTR d1, DWORD_PTR d2);
 
   BITMAPINFOHEADER _bmih;
   BITMAPINFO _dbmi;
@@ -138,7 +137,7 @@ private:
   ImageData         screenImageData;
 
   bool              _backfaceCullingOn;
-  bool              _zbufferOn, _fpsOn, _showFileName, _showTriangleCount;
+  bool              _zbufferOn, _fpsOn;
   vector<ImageData> _textureImageDatas;
 
   int _clientWidth = CLIENT_WIDTH;
@@ -181,8 +180,6 @@ GameImpl::GameImpl()
   , _backfaceCullingOn(true)
   , _zbufferOn(true)
   , _fpsOn(true)
-  , _showFileName(true)
-  , _showTriangleCount(true)
   , _xrot()
   , _yrot()
   , _currentFPS()
@@ -231,25 +228,19 @@ GameImpl::~GameImpl()
 {}
 
 //------------------------------------------------------------------------------
-//  Operators
-//------------------------------------------------------------------------------
-
-
-//------------------------------------------------------------------------------
 //  GameImpl Member Functions
 //------------------------------------------------------------------------------
 
-/*
- *  Callback function for the multimedia timer.
- */
-void CALLBACK GameImpl::TimeProc(UINT uID, UINT uMsg, DWORD_PTR dwUser, DWORD_PTR d1, DWORD_PTR d2) {
+// Callback function for the multimedia timer.
+void CALLBACK GameImpl::TimeProc(UINT uID, UINT uMsg, DWORD_PTR dwUser,
+                                 DWORD_PTR d1, DWORD_PTR d2)
+{
   PostMessage( hwndMain, WM_MM_TIMER, 0, 0 );
 }
 
-/*
- *  Starts the multimedia timer.
- */
-void GameImpl::startTimer() {
+// Starts the multimedia timer.
+void GameImpl::startTimer()
+{
   TIMECAPS tc;
   timeGetDevCaps(&tc, sizeof(TIMECAPS));
   DWORD resolution = std::min( std::max(tc.wPeriodMin, (UINT)0 ),tc.wPeriodMax);
@@ -257,9 +248,7 @@ void GameImpl::startTimer() {
   iTimerId = timeSetEvent( TIMER_DELAY,resolution,TimeProc,0,TIME_PERIODIC );
 }
 
-/*
- *  Stops the multimedia timer.
- */
+// Stops the multimedia timer.
 void GameImpl::stopTimer() {
   timeKillEvent( iTimerId );
   timeEndPeriod( TIMER_DELAY );
@@ -281,9 +270,7 @@ void GameImpl::createMenus()
   _optionsMenu.add("Wireframe", MIWireframe);
   _optionsMenu.add("Backface Culling", MIBackfacCulling);
   _optionsMenu.add("Z Buffer", MIZBuffer);
-  _optionsMenu.add("Show FPS", MIShowFPS);
-  _optionsMenu.add("Show Triangle Count", MIShowTriangleCount);
-  _optionsMenu.add("Show File Name", MIShowFileName);
+  _optionsMenu.add("Show FPS / Info", MIShowFPS);
   _optionsMenu.addSeparator();
   _optionsMenu.add("640x360", MI640x360);
   _optionsMenu.add("640x480", MI640x480);
@@ -394,9 +381,9 @@ void GameImpl::loadImages()
 std::string utf8_encode(const std::wstring &wstr)
 {
     if( wstr.empty() ) return std::string();
-    int size_needed = WideCharToMultiByte(CP_UTF8, 0, &wstr[0], -1, NULL, 0, NULL, NULL);
+    int size_needed = WideCharToMultiByte(CP_UTF8, 0, &wstr[0], -1, 0, 0, 0, 0);
     std::string strTo( size_needed, 0 );
-    WideCharToMultiByte                  (CP_UTF8, 0, &wstr[0], -1, &strTo[0], size_needed, NULL, NULL);
+    WideCharToMultiByte(CP_UTF8, 0, &wstr[0], -1, &strTo[0], size_needed, 0, 0);
     return strTo;
 }
 
@@ -552,14 +539,6 @@ LRESULT GameImpl::handleMessage( UINT msg, WPARAM wParam, LPARAM lParam )
           _fpsOn = !_fpsOn;
           break;
 
-        case MIShowTriangleCount:
-          _showTriangleCount = !_showTriangleCount;
-          break;
-
-        case MIShowFileName:
-          _showFileName = !_showFileName;
-          break;
-
         case MIBackfacCulling:
           _backfaceCullingOn = !_backfaceCullingOn;
           break;
@@ -568,10 +547,10 @@ LRESULT GameImpl::handleMessage( UINT msg, WPARAM wParam, LPARAM lParam )
         case MI640x480: _clientWidth=640, _clientHeight=480; resetGame(); break;
         case MI800x600: _clientWidth=800, _clientHeight=600; resetGame(); break;
         case MI848x480: _clientWidth=848, _clientHeight=480; resetGame(); break;
-        case MI1024x768: _clientWidth=1024, _clientHeight=768; resetGame(); break;
-        case MI1280x720: _clientWidth=1280, _clientHeight=720; resetGame(); break;
-        case MI1366x768: _clientWidth=1366, _clientHeight=768; resetGame(); break;
-        case MI1920x1080: _clientWidth=1920, _clientHeight=1080; resetGame(); break;
+        case MI1024x768: _clientWidth=1024, _clientHeight=768;resetGame();break;
+        case MI1280x720: _clientWidth=1280, _clientHeight=720;resetGame();break;
+        case MI1366x768: _clientWidth=1366, _clientHeight=768;resetGame();break;
+        case MI1920x1080:_clientWidth=1920,_clientHeight=1080;resetGame();break;
 
         case MIScale001: _scale=0.01f; break;
         case MIScale01: _scale=0.1f; break;
@@ -587,7 +566,9 @@ LRESULT GameImpl::handleMessage( UINT msg, WPARAM wParam, LPARAM lParam )
         case MIScale256: _scale=256; break;
 
         case MIBlackBackground: _backgroundColor = 0; break;
-        case MIBlueBackground: _backgroundColor=ImageData::makeLittlePixel(64, 145, 250); break;
+        case MIBlueBackground:
+          _backgroundColor=ImageData::makeLittlePixel(64, 145, 250);
+          break;
 
         case MIClipAll: _clipMode = CLIP_ALL; break;
         case MIClipNearFar: _clipMode = CLIP_NEAR_AND_FAR; break;
@@ -637,20 +618,48 @@ LRESULT GameImpl::handleMessage( UINT msg, WPARAM wParam, LPARAM lParam )
       if ( hMenu == _optionsMenu )
       {
         _optionsMenu.setMenuItemChecked( MINothing, _drawWireframeOnly );
-        _optionsMenu.setMenuItemChecked( MISolid, _triangleDrawer.drawMode == TriangleDrawer::DRAW_SOLID );
-        _optionsMenu.setMenuItemChecked( MISolidRainbow, _triangleDrawer.drawMode == TriangleDrawer::DRAW_RGB_SHADED );
-        _optionsMenu.setMenuItemChecked( MIAffine, _triangleDrawer.drawMode == TriangleDrawer::DRAW_AFFINE );
-        _optionsMenu.setMenuItemChecked( MIPerspectiveCorrect, _triangleDrawer.drawMode == TriangleDrawer::DRAW_PERSPECTIVE );
+        _optionsMenu.setMenuItemChecked(
+          MISolid, _triangleDrawer.drawMode == TriangleDrawer::DRAW_SOLID
+        );
+        _optionsMenu.setMenuItemChecked(
+          MISolidRainbow,
+          _triangleDrawer.drawMode == TriangleDrawer::DRAW_RGB_SHADED
+        );
+        _optionsMenu.setMenuItemChecked(
+          MIAffine, _triangleDrawer.drawMode == TriangleDrawer::DRAW_AFFINE
+        );
+        _optionsMenu.setMenuItemChecked(
+          MIPerspectiveCorrect,
+          _triangleDrawer.drawMode == TriangleDrawer::DRAW_PERSPECTIVE
+        );
         _optionsMenu.setMenuItemChecked( MIWireframe, _drawWireframe );
         _optionsMenu.setMenuItemChecked( MIZBuffer, _zbufferOn );
         _optionsMenu.setMenuItemChecked( MIBackfacCulling, _backfaceCullingOn );
         _optionsMenu.setMenuItemChecked( MIShowFPS, _fpsOn );
-        _optionsMenu.setMenuItemChecked( MIShowTriangleCount, _showTriangleCount );
-        _optionsMenu.setMenuItemChecked( MIShowFileName, _showFileName );
-        _optionsMenu.setMenuItemChecked( MI640x360, _clientWidth==640 && _clientHeight==360 );
-        _optionsMenu.setMenuItemChecked( MI640x480, _clientWidth==640 && _clientHeight==480);
-        _optionsMenu.setMenuItemChecked( MI800x600, _clientWidth==800 && _clientHeight==600);
-        _optionsMenu.setMenuItemChecked( MI1024x768, _clientWidth==1024 && _clientHeight==768);
+        _optionsMenu.setMenuItemChecked(
+          MI640x360, _clientWidth==640 && _clientHeight==360
+        );
+        _optionsMenu.setMenuItemChecked(
+          MI640x480, _clientWidth==640 && _clientHeight==480
+        );
+        _optionsMenu.setMenuItemChecked(
+          MI800x600, _clientWidth==800 && _clientHeight==600
+        );
+        _optionsMenu.setMenuItemChecked(
+          MI848x480, _clientWidth==848 && _clientHeight==480
+        );
+        _optionsMenu.setMenuItemChecked(
+          MI1024x768, _clientWidth==1024 && _clientHeight==768
+        );
+        _optionsMenu.setMenuItemChecked(
+          MI1280x720, _clientWidth==1280 && _clientHeight==720
+        );
+        _optionsMenu.setMenuItemChecked(
+          MI1366x768, _clientWidth==1366 && _clientHeight==768
+        );
+        _optionsMenu.setMenuItemChecked(
+          MI1920x1080, _clientWidth==1920 && _clientHeight==1080
+        );
       }
       else if (hMenu == _textureMenu) {
         // _textureMenu.setMenuItemChecked( MITexture1+_textureID, true);
@@ -682,7 +691,7 @@ LRESULT GameImpl::handleMessage( UINT msg, WPARAM wParam, LPARAM lParam )
     {
       PAINTSTRUCT ps ;
       HDC hDC = BeginPaint( hwnd, &ps ) ;
-      if (_fpsOn || _showFileName || _showTriangleCount) {
+      if (_fpsOn) {
         drawWorld(bufferDC);
         drawFPS(bufferDC);
         bufferDC.draw( hDC );
@@ -738,51 +747,63 @@ void GameImpl::createDefaultMesh()
   Triangle t;
 
   // South
-  t = Triangle(leftX, topY, frontZ, leftX, bottomY, frontZ, rightX, topY, frontZ, pink);
+  t = Triangle(leftX, topY, frontZ, leftX, bottomY, frontZ,
+               rightX, topY, frontZ, pink);
   t.setTexUVs(0.0, 0.0, 0.0, -1.0, 1.0, -0.0);
   _defaultMesh.push_back(t);
 
-  t = Triangle(leftX, bottomY, frontZ, rightX, bottomY, frontZ, rightX, topY, frontZ, pink);
+  t = Triangle(leftX, bottomY, frontZ, rightX, bottomY, frontZ,
+               rightX, topY, frontZ, pink);
   t.setTexUVs(0.0, -1.0, 1.0, -1.0, 1.0, -0.0);
   _defaultMesh.push_back(t);
 
   // East
-  t = Triangle(rightX, topY, frontZ, rightX, bottomY, frontZ, rightX, topY, backZ, green);
+  t = Triangle(rightX, topY, frontZ, rightX, bottomY, frontZ,
+               rightX, topY, backZ, green);
   t.setTexUVs(0.0, 0.0, 0.0, -1.0, 1.0, 0.0);
   _defaultMesh.push_back(t);
-  t = Triangle(rightX, bottomY, frontZ, rightX, bottomY, backZ, rightX, topY, backZ, green);
+  t = Triangle(rightX, bottomY, frontZ, rightX, bottomY, backZ,
+               rightX, topY, backZ, green);
   t.setTexUVs(0.0, -1.0, 1.0, -1.0, 1.0, 0.0);
   _defaultMesh.push_back(t);
 
   // North
-  t = Triangle(rightX, topY, backZ, rightX, bottomY, backZ, leftX, topY, backZ, blue);
+  t = Triangle(rightX, topY, backZ, rightX, bottomY, backZ,
+               leftX, topY, backZ, blue);
   t.setTexUVs(0.0, 0.0, 0.0, -1.0, 1.0, 0.0);
   _defaultMesh.push_back(t);
-  t = Triangle(rightX, bottomY, backZ, leftX, bottomY, backZ, leftX, topY, backZ, blue);
+  t = Triangle(rightX, bottomY, backZ, leftX, bottomY, backZ,
+               leftX, topY, backZ, blue);
   t.setTexUVs(0.0, -1.0, 1.0, -1.0, 1.0, 0.0);
   _defaultMesh.push_back(t);
 
   // West
-  t = Triangle(leftX, topY, backZ, leftX, bottomY, backZ, leftX, topY, frontZ, red);
+  t = Triangle(leftX, topY, backZ, leftX, bottomY, backZ,
+               leftX, topY, frontZ, red);
   t.setTexUVs(0.0, 0.0, 0.0, -1.0, 1.0, 0.0);
   _defaultMesh.push_back(t);
-  t = Triangle(leftX, bottomY, backZ, leftX, bottomY, frontZ, leftX, topY, frontZ, red);
+  t = Triangle(leftX, bottomY, backZ, leftX, bottomY, frontZ,
+               leftX, topY, frontZ, red);
   t.setTexUVs(0.0, -1.0, 1.0, -1.0, 1.0, 0.0);
   _defaultMesh.push_back(t);
 
   // Top
-  t = Triangle(leftX, topY, backZ, leftX, topY, frontZ, rightX, topY, backZ, yellow);
+  t = Triangle(leftX, topY, backZ, leftX, topY, frontZ,
+               rightX, topY, backZ, yellow);
   t.setTexUVs(0.0, 0.0, 0.0, -1.0, 1.0, 0.0);
   _defaultMesh.push_back(t);
-  t = Triangle(leftX, topY, frontZ, rightX, topY, frontZ, rightX, topY, backZ, yellow);
+  t = Triangle(leftX, topY, frontZ, rightX, topY, frontZ,
+               rightX, topY, backZ, yellow);
   t.setTexUVs(0.0, -1.0, 1.0, -1.0, 1.0, 0.0);
   _defaultMesh.push_back(t);
 
   // Bottom
-  t = Triangle(leftX, bottomY, frontZ, leftX, bottomY, backZ, rightX, bottomY, frontZ, violet);
+  t = Triangle(leftX, bottomY, frontZ, leftX, bottomY, backZ,
+               rightX, bottomY, frontZ, violet);
   t.setTexUVs(0.0, 0.0, 0.0, -1.0, 1.0, 0.0);
   _defaultMesh.push_back(t);
-  t = Triangle(leftX, bottomY, backZ, rightX, bottomY, backZ, rightX, bottomY, frontZ, violet);
+  t = Triangle(leftX, bottomY, backZ, rightX, bottomY, backZ,
+               rightX, bottomY, frontZ, violet);
   t.setTexUVs(0.0, -1.0, 1.0, -1.0, 1.0, 0.0);
   _defaultMesh.push_back(t);
 
@@ -941,23 +962,17 @@ void GameImpl::updateGame()
 
 void GameImpl::drawFPS(HDC hdc)
 {
+  if (!_fpsOn) {
+    return;
+  }
   string info;
   RECT rc = {0} ;
   GetClientRect( hwnd, &rc ) ;
-
-  if (_fpsOn) {
-    info += "FPS: " + to_string(_currentFPS) + "\n";
-  }
-  if (_showTriangleCount) {
-    info += "Triangles: " + to_string(_scaledMesh.size());
-
-  }
+  info += "FPS: " + to_string(_currentFPS) + "\n";
+  info += "Triangles: " + to_string(_scaledMesh.size());
   DrawText(hdc, info.c_str(), -1, &rc, DT_LEFT|DT_TOP);
-
-  if (_showFileName) {
-    if (!filepath.empty()) {
-      DrawTextW(hdc, filepath.c_str(), -1, &rc, DT_LEFT|DT_BOTTOM|DT_SINGLELINE);
-    }
+  if (!filepath.empty()) {
+    DrawTextW(hdc, filepath.c_str(), -1, &rc, DT_LEFT|DT_BOTTOM|DT_SINGLELINE);
   }
 }
 
@@ -986,16 +1001,19 @@ void GameImpl::drawWorld(HDC hdc)
   for (size_t i=0; i<_mesh.size(); ++i) {
     Triangle* t = &_mesh[i];
 
-    float fovydeg = 90.0f;
-    float fovyrad = G3D::deg2rad(fovydeg);
-    float znear = 1.f;
-    float zfar = 1000.f;
+    const float fovydeg = 90.0f;
+    const float fovyrad = G3D::deg2rad(fovydeg);
+    const float aspectRatio = _clientWidth/(float)_clientHeight;
+    const float znear = 1.f;
+    const float zfar = 1000.f;
 
     glm::vec3 moveVector = Camera::xyzToZXY(-_camera.x, -_camera.y, -_camera.z);
     glm::mat4 translate = glm::translate(glm::mat4(1), moveVector);
-    glm::mat4 proj = glm::perspective(fovyrad, _clientWidth/(float)_clientHeight, znear, zfar);
-    glm::mat4 rotateY = glm::rotate(glm::mat4(1), _camera.rot, glm::vec3(0.0f, -1.0f, 0.0f));
-    glm::mat4 rotateX = glm::rotate(glm::mat4(1), _camera.vrot, glm::vec3(-1.0f, 0.0f, 0.0f));
+    glm::mat4 proj = glm::perspective(fovyrad, aspectRatio, znear, zfar);
+    glm::mat4 rotateY = glm::rotate(glm::mat4(1), _camera.rot,
+                                    glm::vec3(0.0f, -1.0f, 0.0f));
+    glm::mat4 rotateX = glm::rotate(glm::mat4(1), _camera.vrot,
+                                    glm::vec3(-1.0f, 0.0f, 0.0f));
     glm::mat4 viewProj = proj * rotateX * rotateY * translate;
 
     Vertex4f* vertices = t->vertices;
