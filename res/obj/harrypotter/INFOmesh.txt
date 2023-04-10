@@ -1,0 +1,7 @@
+obj = static 3D model file
+fbx = original model with all contents / joints etc.
+
+-request any perticular models from this game for me to extract & upload
+by leaving me a simple message, dont be afraid to ask okay? :)
+
+-NavyFoxKid
