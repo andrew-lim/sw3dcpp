@@ -4,7 +4,6 @@
 #include <ctime>
 #include <tchar.h>
 #include <cstdlib>
-#include <array>
 #include "Game.h"
 #include "Window.h"
 #include "Bitmap.h"
