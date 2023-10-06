@@ -122,7 +122,7 @@ public:
 
   Matrix4 mul(const Matrix4& m) const
   {
-		Matrix4 r;
+    Matrix4 r;
 
     for(int row = 0; row < 4; row++) {
       for(int col = 0; col < 4; col++) {
@@ -132,10 +132,10 @@ public:
           get(2,row) * m.get(col, 2) +
           get(3,row) * m.get(col, 3)
         );
-			} // col
-		} // row
+      } // col
+    } // row
 
-		return r;
+    return r;
   }
 
   Vector4g<T> mul(const Vector4g<T>& vec) const
@@ -169,41 +169,41 @@ public:
 
   static Matrix4 makeXRotation(float rad)
   {
-		const T s = sin(rad);
-		const T c = cos(rad);
+    const T s = sin(rad);
+    const T c = cos(rad);
     Matrix4 m;
     m.set(1, 1, c);
     m.set(1, 2, -s);
     m.set(2, 1, s);
     m.set(2, 2, c);
-		return m;
+    return m;
   }
 
   static Matrix4 makeYRotation(float rad)
   {
-		const T s = sin(rad);
-		const T c = cos(rad);
+    const T s = sin(rad);
+    const T c = cos(rad);
     Matrix4 m;
     m.set(0, 0, c);
     m.set(0, 2, s);
     m.set(2, 0, -s);
     m.set(2, 2, c);
-		return m;
+    return m;
   }
 
   static Matrix4 makePerspective(T fovy, T aspect, T zNear, T zFar)
   {
     // See glm perspectiveRH_NO
     // https://github.com/g-truc/glm/blob/47585fde0c49fa77a2bf2fb1d2ead06999fd4b6e/glm/ext/matrix_clip_space.inl#L249
-  	T const tanHalfFovy = tan(fovy / static_cast<T>(2));
-  	Matrix4 m;
+    T const tanHalfFovy = tan(fovy / static_cast<T>(2));
+    Matrix4 m;
     m.fill(0);
-  	m.set(0, 0, static_cast<T>(1) / (aspect * tanHalfFovy));
-  	m.set(1, 1, static_cast<T>(1) / (tanHalfFovy));
-  	m.set(2, 2, - (zFar + zNear) / (zFar - zNear));
-  	m.set(2, 3, - static_cast<T>(1));
-  	m.set(3, 2, - (static_cast<T>(2) * zFar * zNear) / (zFar - zNear));
-  	return m;
+    m.set(0, 0, static_cast<T>(1) / (aspect * tanHalfFovy));
+    m.set(1, 1, static_cast<T>(1) / (tanHalfFovy));
+    m.set(2, 2, - (zFar + zNear) / (zFar - zNear));
+    m.set(2, 3, - static_cast<T>(1));
+    m.set(3, 2, - (static_cast<T>(2) * zFar * zNear) / (zFar - zNear));
+    return m;
   }
 
 }; // class Matrix4
