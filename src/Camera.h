@@ -28,16 +28,6 @@ public:
     rot = vrot = 0;
   }
 
-
-  static glm::vec3 xyzToZXY(float x, float y, float z)
-  {
-    glm::vec3 pt;
-    pt[0] = y;
-    pt[1] = z;
-    pt[2] = -x;
-    return pt;
-  }
-
 private:
 
 }; // class Camera

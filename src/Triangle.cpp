@@ -6,12 +6,14 @@ using namespace al::graphics;
 Triangle::Triangle()
 : color(0)
 , textureID(-1)
+, lightStrength(1)
 {
 }
 
 Triangle::Triangle(const Vertex4f& a, const Vertex4f& b, const Vertex4f& c)
 : color(0)
 , textureID(-1)
+, lightStrength(1)
 {
   vertices[0] = a;
   vertices[1] = b;
@@ -24,6 +26,7 @@ Triangle::Triangle(float x1, float y1, float z1,
                    std::uint32_t color)
 : color(color)
 , textureID(-1)
+, lightStrength(1)
 {
   vertices[0].pos = Vector4f(x1, y1, z1);
   vertices[1].pos = Vector4f(x2, y2, z2);

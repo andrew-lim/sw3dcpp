@@ -2,7 +2,6 @@
 #define ANDREW_LIM_Graphics3D_H
 
 #include "ImageData.h"
-#include "Grid.h"
 #include "Vertex.h"
 
 namespace al { namespace graphics {
@@ -10,6 +9,11 @@ namespace al { namespace graphics {
 class Graphics3D
 {
 public:
+
+  static bool closeEnough(double a, double b)
+  {
+    return (fabs(a-b) < 0.000001 && fabs(b-a) < 0.000001);
+  }
 
   static float deg2rad(float deg) { return deg * (M_PI / 180.0); }
   static float rad2deg(float rad) { return rad * (180.0 / M_PI); }
@@ -49,6 +53,16 @@ public:
     return imageData.pixel(x,y);
   }
 
+  static u32 lightPixel(u32 pixel, float lightStrength)
+  {
+      std::uint8_t* rgba = (std::uint8_t*)&pixel;
+      const int r = rgba[0] * lightStrength;
+      const int g = rgba[1] * lightStrength;
+      const int b = rgba[2] * lightStrength;
+      const int a = rgba[3];
+      return ImageData::makePixel(r, g, b, a);
+  }
+
   static u32 colorForRGB(int r, int g, int b)
   {
     r = r % 256;
@@ -79,6 +93,53 @@ public:
     // [ ax bx
     //   ay by ]
     return ax * by - ay * bx;
+  }
+
+  template <class V>
+  static V crossProduct(const V& a, const V& b)
+  {
+		const float x = a[1] * b[2] - a[2] * b[1];
+		const float y = a[2] * b[0] - a[0] * b[2];
+		const float z = a[0] * b[1] - a[1] * b[0];
+
+    V out;
+		out[0] = x;
+    out[1] = y;
+    out[2] = z;
+    return out;
+  }
+
+  template <class V>
+  static float dot(const V& a, const V& b)
+  {
+    return a[0]*b[0] + a[1]*b[1] + a[2]*b[2];
+  }
+
+  template <class V>
+  static float length(const V& a)
+  {
+    return sqrt(Graphics3D::dot(a,a));
+  }
+
+  template <class V>
+  static V normalize(const V& in)
+  {
+    const float len = Graphics3D::length(in);
+    V a(in);
+    if (len) {
+      a[0] = a[0] / len;
+      a[1] = a[1] / len;
+      a[2] = a[2] / len;
+    }
+    return a;
+  }
+
+  template <class V>
+  static V triangleNormal(const V& v1, const V& v2, const V& v3)
+  {
+    V side1 = v2 - v1;
+    V side2 = v3 - v1;
+    return Graphics3D::normalize(Graphics3D::crossProduct(side1, side2));
   }
 
   template <class Arr>

@@ -46,21 +46,35 @@ inline void TriangleDrawer::scanline(ImageData& imageData,
         case DRAW_AFFINE:
           pixel = G3D::pixelAtUV(*textureImageData, tex.u(), tex.v());
           break;
-        case DRAW_SOLID:
-          pixel = triangle.color;
-          break;
         case DRAW_RGB_SHADED:
-        default:
           pixel = G3D::colorForRGB(
             (int)(tex.rgb.x()*w),
             (int)(tex.rgb.y()*w),
             (int)(tex.rgb.z()*w)
           );
           break;
+        default:
+        case DRAW_SOLID:
+          pixel = triangle.color;
+          break;
       }
       const uint8_t* rgba = (uint8_t*) &pixel;
       const uint8_t alpha = rgba[3];
       if (alpha) {
+        if (lightsStyle != LIGHTS_STYLE_NONE) {
+          float lightStrength = 1.0;
+          if (lightsStyle ==  LIGHTS_STYLE_FLAT) {
+            const Vector3f faceNormal = G3D::normalize(triangle.normal);
+            const float dot = G3D::dot(lightDirection, faceNormal);
+            lightStrength = std::max(0.5f, dot);
+          }
+          else {
+            Vector3f vertexNormal = G3D::normalize(tex.normal);
+            const float dot = G3D::dot(lightDirection, vertexNormal);
+            lightStrength = std::max(0.5f, dot);
+          }
+          pixel = G3D::lightPixel(pixel, lightStrength);
+        }
         imageData.pixel(x, y) = pixel;
         if (depthBuffer) {
           depthBuffer->unsafeSet(x, y, depth);

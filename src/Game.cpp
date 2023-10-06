@@ -12,13 +12,6 @@
 #include "Graphics3D.h"
 #include "Vertex.h"
 #include "Triangle.h"
-#include <glm/vec3.hpp> // glm::vec3
-#include <glm/vec4.hpp> // glm::vec4
-#include <glm/mat4x4.hpp> // glm::mat4
-#include <glm/ext/matrix_transform.hpp> // glm::translate,glm::rotate,glm::scale
-#include <glm/ext/matrix_clip_space.hpp> // glm::perspective
-#include <glm/ext/scalar_constants.hpp> // glm::pi
-#include <glm/gtx/string_cast.hpp>
 #include <vector>
 #include <exception>
 #include <map>
@@ -31,19 +24,31 @@
 #include "Camera.h"
 #include "TriangleDrawer.h"
 #include <iostream>
+#include "Matrix.h"
 using namespace std ;
 using namespace al::graphics;
-using namespace glm;
 
 #define CLIENT_WIDTH 848
 #define CLIENT_HEIGHT 480
 #define MOVE_SPEED 4
 #define ROT_SPEED (G3D::deg2rad(2))
+#define LIGHT_SPEED_DEG 1.0
+#define LIGHT_ROT_SPEED (G3D::deg2rad(LIGHT_SPEED_DEG))
 #define WM_MM_TIMER WM_USER + 1    //  Custom message sent by the timer.
 #define SOLID_COLOR (ImageData::makeLittlePixel(0, 255, 0, 255))
 const int DESIRED_FPS = 60;
 const int UPDATE_INTERVAL = 1000/DESIRED_FPS;
-#define TIMER_DELAY UPDATE_INTERVAL             //  Refresh rate in milliseconds.
+#define TIMER_DELAY UPDATE_INTERVAL //  Refresh rate in milliseconds.
+
+enum LightSource {
+  LIGHT_SOURCE_EYE,
+  LIGHT_SOURCE_RIGHT,
+  LIGHT_SOURCE_LEFT
+};
+
+#define LIGHT_NORMAL_EYE   (Vector4f(0.0f, 0.0f, 1.0f))
+#define LIGHT_NORMAL_RIGHT (Vector4f(1.0f, 0.0f, 1.0f))
+#define LIGHT_NORMAL_LEFT  (Vector4f(-1.0f, 0.0f, 1.0f))
 
 //------------------------------------------------------------------------------
 //  GameImpl Definition
@@ -91,6 +96,13 @@ private:
     , MIScale64
     , MIScale128
     , MIScale256
+    , MILightsOff
+    , MILightsFlat
+    , MILightsSmooth
+    , MILightsDynamic
+    , MILightSourceEye
+    , MILightSourceRight
+    , MILightSourceLeft
     , MIClipAll
     , MIClipNearOnly
     , MIClipNearFar
@@ -109,6 +121,9 @@ private:
 private:
   LRESULT  handleMessage( UINT, WPARAM, LPARAM );
   void     repaint() ;
+  void     generateVertexIDs(vector<Triangle>& mesh,
+                             vector<Vector4f>& vertexPositions);
+  void     generateMeshNormals(vector<Triangle>& mesh);
   void     createDefaultMesh();
   void     createScaledMesh(vector<Triangle>&, bool);
   void     drawFPS(HDC hdc);
@@ -155,7 +170,7 @@ private:
   Grid<float> zbuffer;
   vector<Triangle> _mesh, _defaultMesh, _loadedMesh, _scaledMesh;
   Menu _menuBar, _mainMenu, _optionsMenu, _textureMenu, _meshMenu, _clipMenu,
-       _helpMenu;
+       _lightsMenu, _helpMenu;
   OBJLoader _loader;
   uint32_t _backgroundColor = 0;
   Camera _camera;
@@ -163,7 +178,11 @@ private:
   static const int CLIP_NEAR_AND_FAR = 1;
   static const int CLIP_ALL = 2;
   int _clipMode = CLIP_NEAR_ONLY;
+  bool _lightsOn = true;
   TriangleDrawer _triangleDrawer;
+  LightSource _lightSource = LIGHT_SOURCE_EYE;
+  Vector4f _lightNormal;
+  bool dynamicLights = false;
 };
 
 //------------------------------------------------------------------------------
@@ -191,6 +210,7 @@ GameImpl::GameImpl()
   , _textureMenu(true)
   , _meshMenu(true)
   , _clipMenu(true)
+  , _lightsMenu(true)
   , _helpMenu(true)
   , _loader(true)
 {
@@ -218,9 +238,10 @@ GameImpl::GameImpl()
   centerWindow(this->hwnd);
   ShowWindow( hwnd, SW_SHOWNORMAL ) ;
 
+  _lightNormal = G3D::normalize( LIGHT_NORMAL_EYE );
+
 //  startTimer();
   resetGame();
-
 }
 
 GameImpl::~GameImpl()
@@ -307,6 +328,15 @@ void GameImpl::createMenus()
   _clipMenu.add("Near && Far Planes", MIClipNearFar);
   _clipMenu.add("All 6 Planes", MIClipAll);
 
+  _lightsMenu.add("Off", MILightsOff);
+  _lightsMenu.add("Flat", MILightsFlat);
+  _lightsMenu.add("Smooth", MILightsSmooth);
+  _lightsMenu.addSeparator();
+  _lightsMenu.add("Light Source: Eye", MILightSourceEye);
+  _lightsMenu.add("Light Source: Right", MILightSourceRight);
+  _lightsMenu.add("Light Source: Left", MILightSourceLeft);
+  _lightsMenu.addSeparator();
+  _lightsMenu.add("Dynamic", MILightsDynamic);
 
   _helpMenu.add("Controls...", MIControls);
   _helpMenu.add("About...", MIAbout);
@@ -316,6 +346,7 @@ void GameImpl::createMenus()
   _menuBar.add( _textureMenu, "Debug" ) ;
   _menuBar.add( _meshMenu, "Scale" ) ;
   _menuBar.add( _clipMenu, "Clip");
+  _menuBar.add( _lightsMenu, "Lights");
   _menuBar.add( _helpMenu, "Help");
   _menuBar.attachToWindow( hwnd ) ;
   _optionsMenu.setMenuItemChecked( MIPerspectiveCorrect, true ) ;
@@ -416,6 +447,7 @@ void GameImpl::loadOBJ(const wchar_t* path)
     stopTimer();
     _loadedMesh = _loader.triangles;
     _scale = _oldScale = 1;
+    generateMeshNormals(_loadedMesh);
     createScaledMesh(_loadedMesh, false);
     resetGame();
   }
@@ -573,6 +605,32 @@ LRESULT GameImpl::handleMessage( UINT msg, WPARAM wParam, LPARAM lParam )
         case MIClipNearFar: _clipMode = CLIP_NEAR_AND_FAR; break;
         case MIClipNearOnly: _clipMode = CLIP_NEAR_ONLY; break;
 
+        case MILightsOff:
+          _triangleDrawer.lightsStyle = TriangleDrawer::LIGHTS_STYLE_NONE;
+          break;
+        case MILightsFlat:
+          _triangleDrawer.lightsStyle = TriangleDrawer::LIGHTS_STYLE_FLAT;
+          break;
+        case MILightsSmooth:
+          _triangleDrawer.lightsStyle = TriangleDrawer::LIGHTS_STYLE_SMOOTH;
+          break;
+        case MILightsDynamic: dynamicLights = !dynamicLights; break;
+
+        case MILightSourceRight:
+          _lightSource = LIGHT_SOURCE_RIGHT;
+          _lightNormal = G3D::normalize( LIGHT_NORMAL_RIGHT );
+          break;
+
+        case MILightSourceLeft:
+          _lightSource = LIGHT_SOURCE_LEFT;
+          _lightNormal = G3D::normalize( LIGHT_NORMAL_LEFT );
+          break;
+
+        case MILightSourceEye:
+          _lightSource = LIGHT_SOURCE_EYE;
+          _lightNormal = G3D::normalize( LIGHT_NORMAL_EYE );
+          break;
+
         case MIControls: showControls(); break;
         case MIAbout: showAbout(); break;
 
@@ -676,6 +734,21 @@ LRESULT GameImpl::handleMessage( UINT msg, WPARAM wParam, LPARAM lParam )
         _meshMenu.setMenuItemChecked( MIScale32, _scale==32.0f);
         _meshMenu.setMenuItemChecked( MIScale64, _scale==64.0f);
       }
+      else if (hMenu == _lightsMenu) {
+        _lightsMenu.setMenuItemChecked(MILightsOff,
+           _triangleDrawer.lightsStyle==TriangleDrawer::LIGHTS_STYLE_NONE);
+        _lightsMenu.setMenuItemChecked(MILightsFlat,
+           _triangleDrawer.lightsStyle==TriangleDrawer::LIGHTS_STYLE_FLAT);
+        _lightsMenu.setMenuItemChecked(MILightsSmooth,
+           _triangleDrawer.lightsStyle==TriangleDrawer::LIGHTS_STYLE_SMOOTH);
+        _lightsMenu.setMenuItemChecked(MILightsDynamic, dynamicLights);
+        _lightsMenu.setMenuItemChecked(MILightSourceLeft,
+          _lightSource==LIGHT_SOURCE_LEFT);
+        _lightsMenu.setMenuItemChecked(MILightSourceEye,
+          _lightSource==LIGHT_SOURCE_EYE);
+        _lightsMenu.setMenuItemChecked(MILightSourceRight,
+          _lightSource==LIGHT_SOURCE_RIGHT);
+      }
       else if (hMenu == _clipMenu) {
         _clipMenu.setMenuItemChecked( MIClipAll, _clipMode==CLIP_ALL);
         _clipMenu.setMenuItemChecked( MIClipNearOnly,_clipMode==CLIP_NEAR_ONLY);
@@ -723,6 +796,88 @@ int GameImpl::run()
 void GameImpl::repaint()
 {
   InvalidateRect( hwnd, NULL, FALSE ) ;
+}
+
+// Collects all unique vertex positions in vertexPositions.
+// The triangle vertices in the mesh will update their .id property to hold the
+// index of the vertex position.
+void GameImpl::generateVertexIDs(vector<Triangle>& mesh,
+                                 vector<Vector4f>& vertexPositions)
+{
+  vertexPositions.clear();
+  for (size_t i=0; i<mesh.size(); i++) {
+    Triangle& triangle = mesh[i];
+    for (size_t j=0; j<3; j++) {
+      Vertex4f& vertex = triangle[j];
+      Vector4f& vertexPos = vertex.pos;
+      std::vector<Vector4f>::iterator it = find(vertexPositions.begin(),
+                                                vertexPositions.end(),
+                                                vertexPos);
+      // Vertex position already inserted
+      if (it != vertexPositions.end()) {
+        vertex.id = (int)(it - vertexPositions.begin());
+      }
+      // New vertex position
+      else {
+        vertexPositions.push_back(vertexPos);
+        vertex.id = (int)(vertexPositions.size()-1);
+      }
+    }
+  }
+}
+
+void GameImpl::generateMeshNormals(vector<Triangle>& mesh)
+{
+  vector<Vector4f> vertexPositions;
+  generateVertexIDs(mesh, vertexPositions);
+  printf("No. of vertices = %d\n", vertexPositions.size());
+
+  vector<Vector3f> vertexNormals;
+  vertexNormals.resize(vertexPositions.size());
+  printf("vertexNormals.size() = %d\n", vertexNormals.size());
+
+  // Calculate triangle face normals
+  for (size_t i=0; i<mesh.size(); ++i) {
+    Triangle* t = &mesh[i];
+    Vertex4f* vertices = t->vertices;
+    Vector4f normal = G3D::triangleNormal(vertices[0].pos,
+                                          vertices[1].pos,
+                                          vertices[2].pos);
+    t->normal = Vector3f(normal[0], normal[1], normal[2]);
+
+    Vector3f& vertexNormal1 = vertexNormals[ vertices[0].id ];
+    vertexNormal1 = vertexNormal1.add( t->normal );
+
+    Vector3f& vertexNormal2 = vertexNormals[ vertices[1].id ];
+    vertexNormal2 = vertexNormal2.add( t->normal );
+
+    Vector3f& vertexNormal3 = vertexNormals[ vertices[2].id ];
+    vertexNormal3 = vertexNormal3.add( t->normal );
+  }
+
+  // Normalize vertices normal
+  for (size_t i=0; i<vertexNormals.size(); i++) {
+    vertexNormals[i] = G3D::normalize(vertexNormals[i]);
+  }
+
+  // Populate mesh triangle vertices with normals
+  for (size_t i=0; i<mesh.size(); ++i) {
+    Triangle* t = &mesh[i];
+    Vertex4f* vertices = t->vertices;
+    for (int iv=0; iv<3; iv++) {
+      int vid = vertices[iv].id;
+      if (vertices[iv].id == -1) {
+        printf("Vertex %d for triangle %d has no id\n", iv, i);
+         throw runtime_error("vertex has no id, see console");
+      }
+      if (vid<0 || vid>=(int)vertexNormals.size()) {
+         printf("Vertex %d for triangle %d has no id\n", iv, i);
+         throw runtime_error("vid out of range");
+      }
+      Vector3f normal = vertexNormals[ vid ];
+      vertices[iv].normal= normal;
+    }
+  }
 }
 
 void GameImpl::createDefaultMesh()
@@ -806,6 +961,8 @@ void GameImpl::createDefaultMesh()
   t.setTexUVs(0.0, -1.0, 1.0, -1.0, 1.0, 0.0);
   _defaultMesh.push_back(t);
 
+  generateMeshNormals(_defaultMesh);
+
   createScaledMesh(_defaultMesh, true);
 }
 
@@ -835,7 +992,6 @@ void GameImpl::updateFPS()
   int timeElapsed = now - _past ;
   if (timeElapsed > UPDATE_INTERVAL) {
     // do something
-
   }
   // fps
   if ( now - _pastFps >= 1000 ) {
@@ -909,6 +1065,26 @@ void GameImpl::updateGame()
   else if (down) {
     vdistance = -_camera.moveSpeed;
   }
+
+  static float lightRotation = 0;
+  Vector4f newLightNormal(_lightNormal);
+  if (dynamicLights) {
+    newLightNormal = G3D::normalize(LIGHT_NORMAL_EYE);
+    lightRotation += LIGHT_SPEED_DEG;
+    // Fast forward the rotation
+    if (lightRotation>180 && lightRotation<270) {
+      lightRotation = 270;
+    }
+    if (lightRotation >= 360) {
+      lightRotation = 0;
+    }
+    Matrix4f rotLight = Matrix4f::makeYRotation(G3D::deg2rad(lightRotation));
+    newLightNormal = G3D::normalize(rotLight*newLightNormal);
+  }
+  else {
+    lightRotation = 0;
+  }
+  _triangleDrawer.lightDirection = newLightNormal;
 
   // Calculate movement vector without strafing first
   _camera.rot += drotation * timeBasedFactor;
@@ -991,50 +1167,67 @@ void GameImpl::drawWorld(HDC hdc)
     }
   }
   _mesh = _scaledMesh;
+
+  // Rotate mesh locally first
   for (size_t i=0; i<_mesh.size(); i++) {
     Triangle& t = _mesh[i];
     t.rotateX(G3D::deg2rad(_xrot));
     t.rotateY(G3D::deg2rad(_yrot));
   }
 
+  const float fovydeg = 90.0f;
+  const float fovyrad = G3D::deg2rad(fovydeg);
+  const float aspectRatio = _clientWidth/(float)_clientHeight;
+  const float znear = 1.f;
+  const float zfar = 1000.f;
+
+  // Convert player world coordinates to 3D right-handed eye coordinates
+  // In player world coordinates, the player is looking down the x-axis and
+  // the z-axis is up
+  const float eyeX = _camera.y;
+  const float eyeY = _camera.z;
+  const float eyeZ = -_camera.x;
+
+  // Movement vector. Shift the world by the opposite of player's position
+  const Matrix4f translation = Matrix4f::makeTranslation(-eyeX, -eyeY, -eyeZ);
+
+  const Matrix4f perspective = Matrix4f::makePerspective(fovyrad, aspectRatio,
+                                                         znear, zfar);
+  const Matrix4f rotY = Matrix4f::makeYRotation(_camera.rot);
+  const Matrix4f rotX = Matrix4f::makeXRotation(_camera.vrot);
+  const Matrix4f rotXY = rotX * rotY;
+  const Matrix4f worldTransform = rotXY * translation;
+  const Matrix4f proj = perspective * worldTransform;
+
   for (size_t i=0; i<_mesh.size(); ++i) {
     Triangle* t = &_mesh[i];
 
-    const float fovydeg = 90.0f;
-    const float fovyrad = G3D::deg2rad(fovydeg);
-    const float aspectRatio = _clientWidth/(float)_clientHeight;
-    const float znear = 1.f;
-    const float zfar = 1000.f;
-
-    glm::vec3 moveVector = Camera::xyzToZXY(-_camera.x, -_camera.y, -_camera.z);
-    glm::mat4 translate = glm::translate(glm::mat4(1), moveVector);
-    glm::mat4 proj = glm::perspective(fovyrad, aspectRatio, znear, zfar);
-    glm::mat4 rotateY = glm::rotate(glm::mat4(1), _camera.rot,
-                                    glm::vec3(0.0f, -1.0f, 0.0f));
-    glm::mat4 rotateX = glm::rotate(glm::mat4(1), _camera.vrot,
-                                    glm::vec3(-1.0f, 0.0f, 0.0f));
-    glm::mat4 viewProj = proj * rotateX * rotateY * translate;
-
     Vertex4f* vertices = t->vertices;
-    glm::vec4 v1 = vertices[0].pos.array<glm::vec4>();
-    glm::vec4 v2 = vertices[1].pos.array<glm::vec4>();
-    glm::vec4 v3 = vertices[2].pos.array<glm::vec4>();
 
-    glm::vec4 clip1 = viewProj * v1;
-    glm::vec4 clip2 = viewProj * v2;
-    glm::vec4 clip3 = viewProj * v3;
+    // Clip Coordinates
+    Vector4f clip1 = proj * vertices[0].pos;
+    Vector4f clip2 = proj * vertices[1].pos;
+    Vector4f clip3 = proj * vertices[2].pos;
 
     // Create a triangle with clip coordinates
-    Vertex4f clipVertex1 = Vertex4f(Vector4f(clip1), t->uv(0));
-    Vertex4f clipVertex2 = Vertex4f(Vector4f(clip2), t->uv(1));
-    Vertex4f clipVertex3 = Vertex4f(Vector4f(clip3), t->uv(2));
+    Vertex4f clipVertex1 = Vertex4f(clip1, t->uv(0));
+    Vertex4f clipVertex2 = Vertex4f(clip2, t->uv(1));
+    Vertex4f clipVertex3 = Vertex4f(clip3, t->uv(2));
     Triangle triangleToClip(clipVertex1, clipVertex2, clipVertex3);
+
+    // Copy attributes from mesh triangle
     triangleToClip.color = t->color;
     if (_triangleDrawer.drawMode == TriangleDrawer::DRAW_RGB_SHADED) {
-      triangleToClip.vertices[0].rgb = Vector3f(200, 0, 0);
-      triangleToClip.vertices[1].rgb = Vector3f(0, 200, 0);
-      triangleToClip.vertices[2].rgb = Vector3f(0, 0, 200);
+      triangleToClip.vertices[0].rgb = Vector3f(255, 0, 0);
+      triangleToClip.vertices[1].rgb = Vector3f(0, 255, 0);
+      triangleToClip.vertices[2].rgb = Vector3f(0, 0, 255);
     }
+
+    // The face and vertex normals need to be rotated
+    triangleToClip.vertices[0].normal = rotXY * vertices[0].normal;
+    triangleToClip.vertices[1].normal = rotXY * vertices[1].normal;
+    triangleToClip.vertices[2].normal = rotXY * vertices[2].normal;
+    triangleToClip.normal = rotXY * t->normal;
 
     vector<Triangle> trianglesToClip;
     trianglesToClip.push_back(triangleToClip);
@@ -1056,7 +1249,7 @@ void GameImpl::drawWorld(HDC hdc)
 
     for (size_t i=0; i<clippedTriangles.size(); ++i) {
       Triangle triangle = clippedTriangles[i];
-      triangle.color = t->color;
+      triangle.color = triangleToClip.color;
 
       // Go into normalized device coordinates (NDC)
       triangle.perspectiveDivide();

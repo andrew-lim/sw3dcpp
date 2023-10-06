@@ -21,8 +21,16 @@ public:
     values[3] = w;
   }
 
+  Vector4g(const Vector3g<T>& arr, T w=0)
+  {
+    values[0] = arr[0];
+    values[1] = arr[1];
+    values[2] = arr[2];
+    values[3] = w;
+  }
+
   template <class Arr>
-  Vector4g(const Arr& arr)
+  explicit Vector4g(const Arr& arr)
   {
     values[0] = arr[0];
     values[1] = arr[1];
@@ -88,12 +96,21 @@ public:
     return Vector4g(x() / r, y() / r, z() / r, w() / r);
   }
 
+  Vector4g cross(Vector4g r) const
+  {
+    float x_ = y() * r.z() - z() * r.y();
+    float y_ = z() * r.x() - x() * r.z();
+    float z_ = x() * r.y() - y() * r.x();
+    return Vector4g(x_, y_, z_, 0);
+  }
+
   bool equals(const Vector4g& r) const
   {
     return x()==r.x() && y()==r.y() && z()==r.z() && w()==r.w();
   }
   bool operator==(const Vector4g& r) const { return equals(r); }
   bool operator!=(const Vector4g& r) const { return !equals(r); }
+  Vector4g operator-(const Vector4g& r) const { return sub(r); }
 
   Vector4g abs() const
   {
@@ -181,6 +198,7 @@ public:
 }; // class Vector4g
 
 typedef Vector4g<float> Vector4f;
+typedef Vector4g<int> Vector4i;
 
 } // namespace al
 } // namespace graphics

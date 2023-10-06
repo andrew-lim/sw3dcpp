@@ -10,6 +10,8 @@ public:
   Vertex4f vertices[3];
   std::uint32_t color;
   int textureID; // -1 if not set
+  float lightStrength; // between 0 to 1, default 1
+  Vector3f normal;
   Triangle();
   Triangle(const Vertex4f& a, const Vertex4f& b, const Vertex4f& c);
   Triangle(float x1, float y1, float z1,

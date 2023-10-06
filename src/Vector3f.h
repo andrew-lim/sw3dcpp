@@ -97,7 +97,17 @@ public:
     return arr;
   }
 
-  T get(int index) const
+  const T& get(int index) const
+  {
+    return values[index];
+  }
+
+  T& operator[](int index)
+  {
+    return values[index];
+  }
+
+  const T& operator[](int index) const
   {
     return values[index];
   }
