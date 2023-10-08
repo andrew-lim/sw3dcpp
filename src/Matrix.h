@@ -20,6 +20,11 @@ public:
     values[15] = 1;
   }
 
+  Matrix4(T v)
+  {
+    fill(v);
+  }
+
   Matrix4(T t1, T t2, T t3, T t4, T t5, T t6, T t7, T t8,
           T t9, T t10, T t11, T t12, T t13, T t14, T t15, T t16)
   {
@@ -196,8 +201,7 @@ public:
     // See glm perspectiveRH_NO
     // https://github.com/g-truc/glm/blob/47585fde0c49fa77a2bf2fb1d2ead06999fd4b6e/glm/ext/matrix_clip_space.inl#L249
     T const tanHalfFovy = tan(fovy / static_cast<T>(2));
-    Matrix4 m;
-    m.fill(0);
+    Matrix4 m(0);
     m.set(0, 0, static_cast<T>(1) / (aspect * tanHalfFovy));
     m.set(1, 1, static_cast<T>(1) / (tanHalfFovy));
     m.set(2, 2, - (zFar + zNear) / (zFar - zNear));
