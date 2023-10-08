@@ -23,6 +23,10 @@ displayed with [SetDIBitsToDevice](https://learn.microsoft.com/en-us/windows/win
   </tr>
 </table>
 
+## Videos
+
+[YouTube Playlist](https://www.youtube.com/watch?v=YPubnjG4eH8&list=PL4Pn9mFG1hxREHDD_Zxq7BTCi5jRkjrjr&ab_channel=AndrewLim)
+
 ## Features
 
 - Displays a simple textured cube at the start
@@ -30,11 +34,12 @@ displayed with [SetDIBitsToDevice](https://learn.microsoft.com/en-us/windows/win
 - Solid, Affine and Nearest Neighbour Perspective-Correct Texture Mapping
 - Clipping by near plane only, or clipping by all 6 planes
 - Z Buffer
+- Flat and Smooth/Gourand Lighting
 
 ## Libraries Used
 
-- [glm](https://github.com/g-truc/glm) for matrix math
 - [lodepng](https://github.com/lvandeve/lodepng) for PNG loading
 - [tinyobjloader](https://github.com/tinyobjloader/tinyobjloader) for .OBJ parsing
+- [glm](https://github.com/g-truc/glm) was previously used for matrix math but is no longer used, having been replaced by cusom Matrix and Vector classes. However it is still distributed together with the source code.
 
 MIT Licensed
