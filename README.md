@@ -40,6 +40,6 @@ displayed with [SetDIBitsToDevice](https://learn.microsoft.com/en-us/windows/win
 
 - [lodepng](https://github.com/lvandeve/lodepng) for PNG loading
 - [tinyobjloader](https://github.com/tinyobjloader/tinyobjloader) for .OBJ parsing
-- [glm](https://github.com/g-truc/glm) was previously used for matrix math but is no longer used, having been replaced by cusom Matrix and Vector classes. However it is still distributed together with the source code.
+- [glm](https://github.com/g-truc/glm) was previously used for matrix math but has been replaced by custom Matrix and Vector classes. However it is still distributed together with the source code.
 
 MIT Licensed
