@@ -45,7 +45,8 @@ void OBJLoader::loadPNG(const std::string& path, ImageData& imageData)
   }
   if (image && width && height) {
     imageData.copy(image, width, height);
-    imageData.swapEndianess();
+    // RGBA to BGRA
+    imageData.swapPixelBytes(0, 2);
     d("loadPNG success for %s\n", path.c_str());
   }
   if (image) {

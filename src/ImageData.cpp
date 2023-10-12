@@ -106,13 +106,11 @@ void ImageData::blit(ImageData& dst, u32 dstX, u32 dstY,
   }
 }
 
-void ImageData::swapEndianess()
+void ImageData::swapPixelBytes(int i1, int i2)
 {
   u32* data32 = (u32*)_data;
   for (u32 i=0; i<_w*_h; ++i) {
-    u8* bytes = (u8*)(&data32[i]);
-    u32 newPixel = makePixel(bytes[2], bytes[1], bytes[0], bytes[3]);
-    data32[i] = newPixel;
+    swapBytes((u8*)(&data32[i]), i1, i2);
   }
 }
 

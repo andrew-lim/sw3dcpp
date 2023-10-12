@@ -68,7 +68,7 @@ public:
     r = r % 256;
     g = g % 256;
     b = b % 256;
-    return ImageData::makeLittlePixel(r, g, b, 255);
+    return ImageData::makePixel(r, g, b, 255);
   }
 
   /**

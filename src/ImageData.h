@@ -18,9 +18,9 @@ private:
   u32 _w, _h;
   u8* _data;
   bool _needCleanUp;
-  
+
 public:
-  
+
   static const int BYTES_PER_PIXEL = 4;
   static const int BITS_PER_PIXEL = 32;
   
@@ -68,28 +68,24 @@ public:
     const u8 bytes[BYTES_PER_PIXEL] = {c1, c2, c3, c4};
     return *((u32*)&bytes);
   }
-  
-  static u32 makeLittlePixel(u8 c1, u8 c2, u8 c3, u8 c4=0)
-  {
-    const u8 bytes[BYTES_PER_PIXEL] = {c3, c2, c1, c4};
-    return *((u32*)&bytes);
-  }
 
-  // Sets pixel RGBA.
-  // Stores the bytes using little-endian BGRA format
-  // For more control use the pixel() and makePixel() methods
-  void setPixel(u32 x, u32 y, u8 r, u8 g, u8 b, u8 a=0)
-  {
-    pixel(x, y) = makePixel(b,g,r,a);
-  }
-  
   void clear();
   void fill(u32 pixel);
 
   void blit(ImageData& dst, u32 dstX, u32 dstY,
             u32 srcX=0, u32 srcY=0, u32 srcW=0, u32 srcH=0);
 
-  void swapEndianess();
+  static void swapBytes(void* in, int i1, int i2)
+  {
+    u8* bytes = (u8*) in;
+    u8& a = bytes[i1];
+    u8& b = bytes[i2];
+    const u8 tmp = a;
+    a = b;
+    b = tmp;
+  }
+
+  void swapPixelBytes(int i1, int i2);
   void fillAlpha(u8 alpha);
 
 }; // class ImageData

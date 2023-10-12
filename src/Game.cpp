@@ -35,7 +35,7 @@ using namespace al::graphics;
 #define LIGHT_SPEED_DEG 1.0
 #define LIGHT_ROT_SPEED (G3D::deg2rad(LIGHT_SPEED_DEG))
 #define WM_MM_TIMER WM_USER + 1    //  Custom message sent by the timer.
-#define SOLID_COLOR (ImageData::makeLittlePixel(0, 255, 0, 255))
+#define SOLID_COLOR (ImageData::makePixel(0, 255, 0, 255))
 const int DESIRED_FPS = 60;
 const int UPDATE_INTERVAL = 1000/DESIRED_FPS;
 #define TIMER_DELAY UPDATE_INTERVAL //  Refresh rate in milliseconds.
@@ -218,7 +218,6 @@ GameImpl::GameImpl()
   _drawWireframeOnly = false;
   _drawWireframe = true;
   _triangleDrawer.drawMode = TriangleDrawer::DRAW_PERSPECTIVE;
-//  _backgroundColor=ImageData::makeLittlePixel(64, 145, 250);
 
   srand( (unsigned int)time(0) );
   printf("DESIRED_FPS=%d\n", DESIRED_FPS);
@@ -598,7 +597,7 @@ LRESULT GameImpl::handleMessage( UINT msg, WPARAM wParam, LPARAM lParam )
 
         case MIBlackBackground: _backgroundColor = 0; break;
         case MIBlueBackground:
-          _backgroundColor=ImageData::makeLittlePixel(64, 145, 250);
+          _backgroundColor=ImageData::makePixel(250, 145, 64); // BGR
           break;
 
         case MIClipAll: _clipMode = CLIP_ALL; break;
@@ -891,12 +890,21 @@ void GameImpl::createDefaultMesh()
   float frontZ  = 64;
   float backZ   = frontZ - 128;
 
-  uint32_t pink   = ImageData::makeLittlePixel(255, 192, 203, 255);
-  uint32_t green  = ImageData::makeLittlePixel(0, 255, 0, 255);
-  uint32_t red    = ImageData::makeLittlePixel(255, 0, 0, 255);
-  uint32_t blue   = ImageData::makeLittlePixel(0, 0, 255, 255);
-  uint32_t yellow = ImageData::makeLittlePixel(255, 255, 0, 255);
-  uint32_t violet = ImageData::makeLittlePixel(98, 88, 124, 255);
+  // RGBA
+  uint32_t pink   = ImageData::makePixel(255, 192, 203, 255);
+  uint32_t green  = ImageData::makePixel(0, 255, 0, 255);
+  uint32_t red    = ImageData::makePixel(255, 0, 0, 255);
+  uint32_t blue   = ImageData::makePixel(0, 0, 255, 255);
+  uint32_t yellow = ImageData::makePixel(255, 255, 0, 255);
+  uint32_t violet = ImageData::makePixel(98, 88, 124, 255);
+
+  // BGRA
+  ImageData::swapBytes(&pink, 0, 2);
+  ImageData::swapBytes(&green, 0, 2);
+  ImageData::swapBytes(&red, 0, 2);
+  ImageData::swapBytes(&blue, 0, 2);
+  ImageData::swapBytes(&yellow, 0, 2);
+  ImageData::swapBytes(&violet, 0, 2);
 
   Triangle t;
 
