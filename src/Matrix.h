@@ -36,6 +36,16 @@ public:
     return values[i];
   }
 
+  T* operator[](int col)
+  {
+    return &(values[col*4]);
+  }
+
+  const T* operator[](int col) const
+  {
+    return &(values[col*4]);
+  }
+
   T operator()(int i) const
   {
     return values[i];

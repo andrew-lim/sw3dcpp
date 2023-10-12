@@ -269,9 +269,9 @@ void testMatrix()
 
   // Matrix A         Matrix B           A x B
   // 5  7  9  10       3  10  12 18      210  267  236  271
-  // 2  3  3   8      12   1  4   9       93  149  104  149
-  // 8 10  2   3       9  10 12   2      171  146  172  268
-  // 3  3  4   8       3  12  4  10      105  169  128  169
+  // 2  3  3   8      12   1   4  9       93  149  104  149
+  // 8 10  2   3       9  10  12  2      171  146  172  268
+  // 3  3  4   8       3  12   4 10      105  169  128  169
 
   Matrix4i a;
   a.fill(5, 2, 8, 3, 7, 3, 10, 3, 9, 3, 2, 4, 10, 8, 3, 8);
@@ -296,6 +296,10 @@ void testMatrix()
     printVector4i(axv, "axv");
     throw std::runtime_error("axv != (172, 98, 92, 106)");
   }
+
+  if (a[2][2] != 2) { throw std::runtime_error("a[2][2] != 2"); }
+  if (b[3][1] != 9) { throw std::runtime_error("b[3][1] != 9"); }
+  if (b[0][3] != 3) { throw std::runtime_error("b[0][3] != 3"); }
 
   printf("--- testMatrix() end\n\n");
 
