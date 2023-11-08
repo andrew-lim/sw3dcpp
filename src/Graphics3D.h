@@ -35,6 +35,12 @@ public:
     const int imageW = (int) imageData.width();
     const int imageH = (int) imageData.height();
 
+    // TODO: Profile and see if using floor() would be faster than modulus
+    // based on comment by tusken-raynor here:
+    // https://gist.github.com/andrew-lim/f35861868f83dbae8ad2656c4fc82660
+    // u = u - std::floor(u)
+    // v== v - std::floor(v)
+
     int x = (u*imageW);
     int y = (v*imageH);
 
