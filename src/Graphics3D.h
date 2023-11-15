@@ -3,6 +3,7 @@
 
 #include "ImageData.h"
 #include "Vertex.h"
+#include <cassert>
 
 namespace al { namespace graphics {
 
@@ -39,10 +40,9 @@ public:
     // based on comment by tusken-raynor here:
     // https://gist.github.com/andrew-lim/f35861868f83dbae8ad2656c4fc82660
     // u = u - std::floor(u)
-    // v== v - std::floor(v)
-
-    int x = (u*imageW);
-    int y = (v*imageH);
+    // v = v - std::floor(v)
+    int x = u * imageW;
+    int y = v * imageH;
 
     // Wrap out of bounds coordinates
     x = x % imageW;
@@ -50,10 +50,10 @@ public:
 
     // Wrap negative coordinates
     if (x<0) {
-      x = imageW - std::abs(x);
+      x = imageW + x;
     }
     if (y<0) {
-      y = imageH - std::abs(y);
+      y = imageH + y;
     }
 
     return imageData.pixel(x,y);
