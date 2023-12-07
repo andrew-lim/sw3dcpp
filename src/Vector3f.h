@@ -11,11 +11,18 @@ class Vector3g
 public:
 
   T values[3];
-  Vector3g(T x=0, T y=0, T z=0)
+  explicit Vector3g(T x=0, T y=0, T z=0)
   {
     values[0] = x;
     values[1] = y;
     values[2] = z;
+  }
+  template <class Arr>
+  Vector3g(const Arr& arr)
+  {
+    values[0] = arr[0];
+    values[1] = arr[1];
+    values[2] = arr[2];
   }
   const T& x() const { return values[0]; }
   const T& y() const { return values[1]; }
@@ -78,14 +85,12 @@ public:
   }
   bool operator==(const Vector3g& r) const { return equals(r); }
   bool operator!=(const Vector3g& r) const { return !equals(r); }
-
-  template <class Arr>
-  Vector3g(const Arr& arr)
-  {
-    values[0] = arr[0];
-    values[1] = arr[1];
-    values[2] = arr[2];
-  }
+  Vector3g operator-(const Vector3g& r) const { return sub(r); }
+  Vector3g operator+(const Vector3g& r) const { return add(r); }
+  Vector3g operator*(const Vector3g& r) const { return mul(r); }
+  Vector3g operator-(T r) const { return sub(r); }
+  Vector3g operator+(T r) const { return add(r); }
+  Vector3g operator*(T r) const { return mul(r); }
 
   template <class Arr>
   Arr array() const
@@ -121,13 +126,14 @@ public:
     );
   }
 
-  Vector3g& operator/=(float f)
+  Vector3g& operator/=(T f)
   {
     x() /= f;
     y() /= f;
     z() /= f;
     return *this;
   }
+
 
 }; // class Vector3g
 

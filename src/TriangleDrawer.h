@@ -7,6 +7,8 @@
 #include "Vertex.h"
 #include "Vector3f.h"
 
+typedef Grid<double> ZBuffer;
+
 namespace al { namespace graphics {
 
 class TriangleDrawer
@@ -20,15 +22,15 @@ public:
   enum LightsStyle {
     LIGHTS_STYLE_NONE, LIGHTS_STYLE_FLAT, LIGHTS_STYLE_SMOOTH
   };
-
+  bool useBarycentric = false;
   DrawMode drawMode;
   LightsStyle lightsStyle;
   Vector3f lightDirection;
-  Grid<float>* depthBuffer;
+  ZBuffer* depthBuffer;
   std::uint32_t color;
   ImageData* textureImageData;
 
-  TriangleDrawer(Grid<float>* depthBuffer = 0)
+  TriangleDrawer(ZBuffer* depthBuffer = 0)
   : drawMode(TriangleDrawer::DRAW_SOLID)
   , lightsStyle(TriangleDrawer::LIGHTS_STYLE_SMOOTH)
   , lightDirection(1.0f, 0.0f, 1.0f)
@@ -49,6 +51,8 @@ public:
                 const Vertex4f& right);
 
   void triangle(ImageData& imageData, const Triangle& triangle);
+
+  void barycentricTriangle(ImageData& imageData, const Triangle& triangle);
 
 }; // class TriangleDrawer
 } // namespace al

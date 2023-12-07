@@ -96,6 +96,8 @@ private:
     , MIScale64
     , MIScale128
     , MIScale256
+    , MIScanline
+    , MIBarycentric
     , MILightsOff
     , MILightsFlat
     , MILightsSmooth
@@ -167,10 +169,10 @@ private:
   float _zStep = 4;
   float _scale = 1;
   float _oldScale = 1;
-  Grid<float> zbuffer;
+  ZBuffer zbuffer;
   vector<Triangle> _mesh, _defaultMesh, _loadedMesh, _scaledMesh;
   Menu _menuBar, _mainMenu, _optionsMenu, _textureMenu, _meshMenu, _clipMenu,
-       _lightsMenu, _helpMenu;
+       _algorithmMenu, _lightsMenu, _helpMenu;
   OBJLoader _loader;
   uint32_t _backgroundColor = 0;
   Camera _camera;
@@ -210,6 +212,7 @@ GameImpl::GameImpl()
   , _textureMenu(true)
   , _meshMenu(true)
   , _clipMenu(true)
+  , _algorithmMenu(true)
   , _lightsMenu(true)
   , _helpMenu(true)
   , _loader(true)
@@ -327,6 +330,9 @@ void GameImpl::createMenus()
   _clipMenu.add("Near && Far Planes", MIClipNearFar);
   _clipMenu.add("All 6 Planes", MIClipAll);
 
+  _algorithmMenu.add("Scanline", MIScanline);
+  _algorithmMenu.add("Barycentric", MIBarycentric);
+
   _lightsMenu.add("Off", MILightsOff);
   _lightsMenu.add("Flat", MILightsFlat);
   _lightsMenu.add("Smooth", MILightsSmooth);
@@ -345,6 +351,7 @@ void GameImpl::createMenus()
   _menuBar.add( _textureMenu, "Debug" ) ;
   _menuBar.add( _meshMenu, "Scale" ) ;
   _menuBar.add( _clipMenu, "Clip");
+  _menuBar.add( _algorithmMenu, "Algorithm");
   _menuBar.add( _lightsMenu, "Lights");
   _menuBar.add( _helpMenu, "Help");
   _menuBar.attachToWindow( hwnd ) ;
@@ -582,9 +589,9 @@ LRESULT GameImpl::handleMessage( UINT msg, WPARAM wParam, LPARAM lParam )
         case MI1366x768: _clientWidth=1366, _clientHeight=768;resetGame();break;
         case MI1920x1080:_clientWidth=1920,_clientHeight=1080;resetGame();break;
 
-        case MIScale001: _scale=0.01f; break;
-        case MIScale01: _scale=0.1f; break;
-        case MIScale05: _scale=0.5f; break;
+        case MIScale001: _scale=0.01; break;
+        case MIScale01: _scale=0.1; break;
+        case MIScale05: _scale=0.5; break;
         case MIScale1: _scale=1; break;
         case MIScale2: _scale=2; break;
         case MIScale4: _scale=4; break;
@@ -603,6 +610,13 @@ LRESULT GameImpl::handleMessage( UINT msg, WPARAM wParam, LPARAM lParam )
         case MIClipAll: _clipMode = CLIP_ALL; break;
         case MIClipNearFar: _clipMode = CLIP_NEAR_AND_FAR; break;
         case MIClipNearOnly: _clipMode = CLIP_NEAR_ONLY; break;
+
+        case MIScanline:
+          _triangleDrawer.useBarycentric = false;
+          break;
+        case MIBarycentric:
+          _triangleDrawer.useBarycentric = true;
+          break;
 
         case MILightsOff:
           _triangleDrawer.lightsStyle = TriangleDrawer::LIGHTS_STYLE_NONE;
@@ -732,6 +746,12 @@ LRESULT GameImpl::handleMessage( UINT msg, WPARAM wParam, LPARAM lParam )
         _meshMenu.setMenuItemChecked( MIScale16, _scale==16.0f);
         _meshMenu.setMenuItemChecked( MIScale32, _scale==32.0f);
         _meshMenu.setMenuItemChecked( MIScale64, _scale==64.0f);
+      }
+      else if (hMenu == _algorithmMenu) {
+        _algorithmMenu.setMenuItemChecked(MIScanline,
+          !_triangleDrawer.useBarycentric);
+        _algorithmMenu.setMenuItemChecked(MIBarycentric,
+          _triangleDrawer.useBarycentric);
       }
       else if (hMenu == _lightsMenu) {
         _lightsMenu.setMenuItemChecked(MILightsOff,
@@ -1024,7 +1044,7 @@ void GameImpl::resetGame()
   _xrot = 0;
   _yrot = 0;
   bufferDC.create(_clientWidth, _clientHeight);
-  zbuffer = Grid<float>(_clientWidth, _clientHeight);
+  zbuffer = ZBuffer(_clientWidth, _clientHeight);
   prepareScreenImageData();
   startTimer();
 }
@@ -1153,6 +1173,7 @@ void GameImpl::drawFPS(HDC hdc)
   GetClientRect( hwnd, &rc ) ;
   info += "FPS: " + to_string(_currentFPS) + "\n";
   info += "Triangles: " + to_string(_scaledMesh.size());
+  info += "\ncamera.z = " + to_string(-_camera.x);
   DrawText(hdc, info.c_str(), -1, &rc, DT_LEFT|DT_TOP);
   if (!filepath.empty()) {
     DrawTextW(hdc, filepath.c_str(), -1, &rc, DT_LEFT|DT_BOTTOM|DT_SINGLELINE);
@@ -1164,6 +1185,7 @@ void GameImpl::drawWorld(HDC hdc)
   screenImageData.fill(_backgroundColor);
 
   zbuffer.fill(numeric_limits<float>::infinity());
+
 
   if (_oldScale != _scale) {
     printf("Scale changed, recreating scaled mesh\n");
@@ -1183,11 +1205,11 @@ void GameImpl::drawWorld(HDC hdc)
     t.rotateY(G3D::deg2rad(_yrot));
   }
 
-  const float fovydeg = 90.0f;
+  const float fovydeg = 90.0;
   const float fovyrad = G3D::deg2rad(fovydeg);
   const float aspectRatio = _clientWidth/(float)_clientHeight;
-  const float znear = 1.f;
-  const float zfar = 1000.f;
+  const float znear = 1;
+  const float zfar = 1000;
 
   // Convert player world coordinates to 3D right-handed eye coordinates
   // In player world coordinates, the player is looking down the x-axis and
@@ -1262,9 +1284,8 @@ void GameImpl::drawWorld(HDC hdc)
       // Go into normalized device coordinates (NDC)
       triangle.perspectiveDivide();
 
-      float xprod = 0;
       if (_backfaceCullingOn) {
-        xprod = Graphics3D::crossProduct2D<Vector4f>(
+        float xprod = Graphics3D::crossProduct2D<Vector4f>(
           triangle.vertex(0).pos,
           triangle.vertex(1).pos,
           triangle.vertex(2).pos

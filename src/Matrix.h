@@ -182,7 +182,7 @@ public:
     return m;
   }
 
-  static Matrix4 makeXRotation(float rad)
+  static Matrix4 makeXRotation(T rad)
   {
     const T s = sin(rad);
     const T c = cos(rad);
@@ -194,7 +194,7 @@ public:
     return m;
   }
 
-  static Matrix4 makeYRotation(float rad)
+  static Matrix4 makeYRotation(T rad)
   {
     const T s = sin(rad);
     const T c = cos(rad);

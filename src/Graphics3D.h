@@ -11,7 +11,7 @@ class Graphics3D
 {
 public:
 
-  static bool closeEnough(double a, double b)
+  static bool closeEnough(float a, float b)
   {
     return (fabs(a-b) < 0.000001 && fabs(b-a) < 0.000001);
   }
@@ -84,7 +84,9 @@ public:
    * The 2 vectors are identified by 3 vertices a, b and c where a is the
    * common point. First vector is (b-a) and second vector is (c-a)
    *
-   * See https://stackoverflow.com/a/35280392/1645045
+   * See
+   * https://stackoverflow.com/a/35280392/1645045
+   * https://stackoverflow.com/q/1560492/1645045
    *
    * Also see comment by "Arnon Marcus" in this video
    * https://www.youtube.com/watch?v=h_Aqol0oTs4&lc=UgxpwWe8s2eGiRiBh054AaABAg
@@ -99,6 +101,18 @@ public:
     // [ ax bx
     //   ay by ]
     return ax * by - ay * bx;
+  }
+
+  /**
+   * Another variant of crossProduct2D but directly takes in 2 vectors instead
+   * of 3 vertices
+   * Also see
+   * https://stackoverflow.com/questions/243945/calculating-a-2d-vectors-cross-product
+   */
+  template <class V>
+  static float crossProduct2D(const V& a, const V& b)
+  {
+    return a[0] * b[1] - a[1] * b[0];
   }
 
   template <class V>

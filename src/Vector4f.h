@@ -98,9 +98,9 @@ public:
 
   Vector4g cross(Vector4g r) const
   {
-    float x_ = y() * r.z() - z() * r.y();
-    float y_ = z() * r.x() - x() * r.z();
-    float z_ = x() * r.y() - y() * r.x();
+    T x_ = y() * r.z() - z() * r.y();
+    T y_ = z() * r.x() - x() * r.z();
+    T z_ = x() * r.y() - y() * r.x();
     return Vector4g(x_, y_, z_, 0);
   }
 
@@ -153,7 +153,7 @@ public:
     return values[index];
   }
 
-  Vector4g& operator/=(float f)
+  Vector4g& operator/=(T f)
   {
     x() /= f;
     y() /= f;
