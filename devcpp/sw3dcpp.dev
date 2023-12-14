@@ -10,7 +10,7 @@ PrivateResource=sw3dcpp_private.rc
 ResourceIncludes=
 MakeIncludes=
 Compiler=
-CppCompiler=-Wall_@@_-pedantic_@@_-O3_@@_
+CppCompiler=-Wall_@@_-pedantic_@@_-O3_@@_-ffloat-store_@@_
 Linker=-lwinmm_@@_-mconsole_@@_
 IsCpp=1
 Icon=
@@ -29,7 +29,7 @@ IncludeVersionInfo=0
 SupportXPThemes=0
 CompilerSet=3
 CompilerSettings=0;0;0;0;0;0;0;1;0;0;0;0;0;0;0;0;0;0;0;0;0;0;8;0;0;0
-UnitCount=41
+UnitCount=43
 
 [VersionInfo]
 Major=1
@@ -452,6 +452,26 @@ BuildCmd=
 
 [Unit41]
 FileName=..\src\Matrix.h
+CompileCpp=1
+Folder=
+Compile=1
+Link=1
+Priority=1000
+OverrideBuildCmd=0
+BuildCmd=
+
+[Unit42]
+FileName=..\src\Font.cpp
+CompileCpp=1
+Folder=
+Compile=1
+Link=1
+Priority=1000
+OverrideBuildCmd=0
+BuildCmd=
+
+[Unit43]
+FileName=..\src\Font.h
 CompileCpp=1
 Folder=
 Compile=1
