@@ -25,6 +25,7 @@
 #include "TriangleDrawer.h"
 #include <iostream>
 #include "Matrix.h"
+#include "Font.h"
 using namespace std ;
 using namespace al::graphics;
 
@@ -98,6 +99,7 @@ private:
     , MIScale256
     , MIScanline
     , MIBarycentric
+    , MIBarycentricAdd
     , MILightsOff
     , MILightsFlat
     , MILightsSmooth
@@ -185,6 +187,7 @@ private:
   LightSource _lightSource = LIGHT_SOURCE_EYE;
   Vector4f _lightNormal;
   bool dynamicLights = false;
+  Font font;
 };
 
 //------------------------------------------------------------------------------
@@ -241,6 +244,8 @@ GameImpl::GameImpl()
   ShowWindow( hwnd, SW_SHOWNORMAL ) ;
 
   _lightNormal = G3D::normalize( LIGHT_NORMAL_EYE );
+
+  font.create( "Courier New", 10 );
 
 //  startTimer();
   resetGame();
@@ -332,6 +337,7 @@ void GameImpl::createMenus()
 
   _algorithmMenu.add("Scanline", MIScanline);
   _algorithmMenu.add("Barycentric", MIBarycentric);
+  _algorithmMenu.add("Barycentric Addition", MIBarycentricAdd);
 
   _lightsMenu.add("Off", MILightsOff);
   _lightsMenu.add("Flat", MILightsFlat);
@@ -612,12 +618,14 @@ LRESULT GameImpl::handleMessage( UINT msg, WPARAM wParam, LPARAM lParam )
         case MIClipNearOnly: _clipMode = CLIP_NEAR_ONLY; break;
 
         case MIScanline:
-          _triangleDrawer.useBarycentric = false;
+          _triangleDrawer.algo = TriangleDrawer::SCANLINE;
           break;
         case MIBarycentric:
-          _triangleDrawer.useBarycentric = true;
+          _triangleDrawer.algo = TriangleDrawer::BARYCENTRIC;
           break;
-
+        case MIBarycentricAdd:
+          _triangleDrawer.algo = TriangleDrawer::BARYCENTRIC_ADD;
+          break;
         case MILightsOff:
           _triangleDrawer.lightsStyle = TriangleDrawer::LIGHTS_STYLE_NONE;
           break;
@@ -749,9 +757,11 @@ LRESULT GameImpl::handleMessage( UINT msg, WPARAM wParam, LPARAM lParam )
       }
       else if (hMenu == _algorithmMenu) {
         _algorithmMenu.setMenuItemChecked(MIScanline,
-          !_triangleDrawer.useBarycentric);
+          TriangleDrawer::SCANLINE == _triangleDrawer.algo);
         _algorithmMenu.setMenuItemChecked(MIBarycentric,
-          _triangleDrawer.useBarycentric);
+          TriangleDrawer::BARYCENTRIC == _triangleDrawer.algo);
+        _algorithmMenu.setMenuItemChecked(MIBarycentricAdd,
+          TriangleDrawer::BARYCENTRIC_ADD == _triangleDrawer.algo);
       }
       else if (hMenu == _lightsMenu) {
         _lightsMenu.setMenuItemChecked(MILightsOff,
@@ -1044,6 +1054,7 @@ void GameImpl::resetGame()
   _xrot = 0;
   _yrot = 0;
   bufferDC.create(_clientWidth, _clientHeight);
+  SelectObject(bufferDC, font.getHandle());
   zbuffer = ZBuffer(_clientWidth, _clientHeight);
   prepareScreenImageData();
   startTimer();

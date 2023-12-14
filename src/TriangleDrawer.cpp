@@ -2,7 +2,7 @@
 #include "LineDrawer.h"
 #include "Graphics3D.h"
 #include <algorithm>
-
+#include <cassert>
 using namespace al::graphics;
 using namespace std;
 
@@ -15,12 +15,21 @@ void TriangleDrawer::wireframeTriangle(ImageData& imageData,
   LineDrawer::bline(imageData, t[2].x(), t[2].y(), t[0].x(), t[0].y(), rgba);
 }
 
+void TriangleDrawer::triangle(ImageData& imageData, const Triangle& triangle)
+{
+  switch (algo) {
+    case SCANLINE: scanlineTriangle(imageData, triangle); return;
+    case BARYCENTRIC: barycentricTriangle(imageData, triangle); return;
+    case BARYCENTRIC_ADD: barycentricAddTriangle(imageData, triangle); return;
+  }
+}
+
 inline void TriangleDrawer::scanline(ImageData& imageData,
                                      const Triangle& triangle,
                                      const Vertex4f& left,
-                                     const Vertex4f& right)
+                                     const Vertex4f& right,
+                                     int y)
 {
-  const int y = left.y();
   const int leftx = left.x();
   const int rightx = right.x();
   const int dx = rightx - leftx;
@@ -84,13 +93,9 @@ inline void TriangleDrawer::scanline(ImageData& imageData,
   }
 }
 
-void TriangleDrawer::triangle(ImageData& imageData, const Triangle& triangle)
+void TriangleDrawer::
+scanlineTriangle(ImageData& imageData, const Triangle& triangle)
 {
-  if (useBarycentric) {
-    barycentricTriangle(imageData, triangle);
-    return;
-  }
-
   Vertex4f top = triangle.vertices[0];
   Vertex4f mid = triangle.vertices[1];
   Vertex4f bot = triangle.vertices[2];
@@ -142,28 +147,42 @@ void TriangleDrawer::triangle(ImageData& imageData, const Triangle& triangle)
   // (i.e. top-bottom edge is right of mid)
   const bool isMidLeft = mid.x() <= mid2.x();
 
-  // Make sure mid is left of mid2 because we will
-  // draw the horizontal scan line from left-to-right
-  if (!isMidLeft) {
-    std::swap(mid, mid2);
-  }
-
   // Top Half Triangle
   if (dytopmid) {
     const Vertex4f leftStep  = isMidLeft ? (mid-top)/dytopmid : topbotstep;
-    const Vertex4f rightStep = isMidLeft ? topbotstep : (mid2-top)/dytopmid;
+    const Vertex4f rightStep = isMidLeft ? topbotstep : (mid-top)/dytopmid;
     const int ystart = std::max(0, topy);
     const int yend   = std::min((int)imageData.height()-1, midy);
     for (int y=ystart; y<=yend; y++) {
       const int ysteps = y - topy;
       const Vertex4f left = top + leftStep * ysteps;
       const Vertex4f right = top + rightStep * ysteps;
-      scanline(imageData, triangle, left, right);
+      scanline(imageData, triangle, left, right, y);
+
+      // 4th vertex mid2 logic test
+      // At the end of the top half triangle, mid2 should be the same as either
+      // left or right.
+      // If this assert fails, try specify the -ffloat-store flag
+      // https://stackoverflow.com/a/3765256/1645045
+      #ifdef TEST_MID2
+      if (y == yend && ysteps == dytopmid) {
+        if (isMidLeft) {
+          assert(right.x() == mid2.x());
+        } else {
+          assert(left.x() == mid2.x());
+        }
+      }
+      #endif
     }
   }
 
   // Bottom Half Triangle
   if (dymidbot) {
+    // Make sure mid is left of mid2 because we will
+    // draw the horizontal scan line from left-to-right
+    if (!isMidLeft) {
+      std::swap(mid, mid2);
+    }
     const Vertex4f leftStep  = isMidLeft ? (bot-mid)/dymidbot : topbotstep;
     const Vertex4f rightStep = isMidLeft ? topbotstep : (bot-mid2)/dymidbot;
     const int ystart = std::max(0, midy);
@@ -172,17 +191,86 @@ void TriangleDrawer::triangle(ImageData& imageData, const Triangle& triangle)
       const int ysteps  = y - midy;
       const Vertex4f left = mid + leftStep * ysteps;
       const Vertex4f right = mid2 + rightStep * ysteps;
-      scanline(imageData, triangle, left, right);
+      scanline(imageData, triangle, left, right, y);
     }
   }
 } // texturedTriangle
 
+inline void TriangleDrawer::barycentricPixel(ImageData& imageData,
+                                      int x, int y,
+                                      const Triangle& t,
+                                      float alp, float bet, float gam,
+                                      double w)
+{
+  const Vertex4f& a = t.vertices[0];
+  const Vertex4f& b = t.vertices[1];
+  const Vertex4f& c = t.vertices[2];
+  const double depth = w;
+  uint32_t pixel;
+  switch (drawMode) {
+    case DRAW_PERSPECTIVE: {
+      const Vector2f uv = (a.uv*alp + b.uv*bet + c.uv*gam);
+      pixel = G3D::pixelAtUV(*textureImageData, uv.u()*w, uv.v()*w);
+      break;
+    }
+    case DRAW_AFFINE: {
+      const Vector2f uv = (a.uv*alp + b.uv*bet + c.uv*gam);
+      pixel = G3D::pixelAtUV(*textureImageData, uv.u(), uv.v());
+      break;
+    }
+    case DRAW_RGB_SHADED: {
+      const Vector3f rgb = (a.rgb*alp + b.rgb*bet + c.rgb*gam);
+      pixel = G3D::colorForRGB(
+        (int)(rgb.x()*w),
+        (int)(rgb.y()*w),
+        (int)(rgb.z()*w)
+      );
+      break;
+    }
+    default:
+    case DRAW_SOLID:
+      pixel = t.color;
+      break;
+  } // switch (drawMode)
+
+  const uint8_t* rgba = (uint8_t*) &pixel;
+  const uint8_t alpha = rgba[3];
+
+  // Lighting
+  if (alpha) {
+    if (lightsStyle != LIGHTS_STYLE_NONE) {
+      float lightStrength = 1.0;
+      if (lightsStyle ==  LIGHTS_STYLE_FLAT) {
+        const Vector3f faceNormal = G3D::normalize(t.normal);
+        const float dot = G3D::dot(lightDirection, faceNormal);
+        lightStrength = std::max(0.5f, dot);
+      }
+      else {
+        // https://stackoverflow.com/a/15625175/1645045
+        Vector3f vertexNormal = (a.normal*alp) + (b.normal*bet) +
+                                (c.normal*gam);
+        vertexNormal = G3D::normalize(vertexNormal);
+        const float dot = G3D::dot(lightDirection, vertexNormal);
+        lightStrength = std::max(0.5f, dot);
+      }
+      pixel = G3D::lightPixel(pixel, lightStrength);
+    }
+    imageData.pixel(x, y) = pixel;
+    if (depthBuffer) {
+      depthBuffer->unsafeSet(x, y, depth);
+    }
+
+  } // if (alpha)
+}
+
 void TriangleDrawer::
 barycentricTriangle(ImageData& imageData, const Triangle& triangle)
 {
-  Vertex4f a = triangle.vertices[0];
-  Vertex4f b = triangle.vertices[1];
-  Vertex4f c = triangle.vertices[2];
+  Triangle t(triangle);
+
+  Vertex4f& a = t.vertices[0];
+  Vertex4f& b = t.vertices[1];
+  Vertex4f& c = t.vertices[2];
 
   if (drawMode != DRAW_AFFINE) {
     a.uv /= a.pos.w();
@@ -205,16 +293,16 @@ barycentricTriangle(ImageData& imageData, const Triangle& triangle)
   const double minXf = std::min(a.x(), std::min(b.x(), c.x()));
   const double maxYf = std::max(a.y(), std::max(b.y(), c.y()));
   const double minYf = std::min(a.y(), std::min(b.y(), c.y()));
-  const int maxX = std::min(std::ceil(maxXf), w-1.0);
-  const int minX = std::max(std::floor(minXf), 0.0);
-  const int maxY = std::min(std::ceil(maxYf), h-1.0);
+  const int maxX = std::min(std::ceil(maxXf), (double)w);
+  int minX = std::max(std::floor(minXf), 0.0);
+  const int maxY = std::min(std::ceil(maxYf), (double)h);
   const int minY = std::max(std::floor(minYf), 0.0);
 
   double area = G3D::crossProduct2D(a.pos, b.pos, c.pos);
 
   for (int y = minY; y < maxY; ++y) {
     for (int x = minX; x < maxX; ++x) {
-      Vector4f p(x+0.5, y+0.5, 0);
+      Vector4f p(x + 0.5f, y + 0.5f, 0);
 
       // crossProduct2D is <= 0 if
       // 1. Point is in triangle
@@ -230,6 +318,7 @@ barycentricTriangle(ImageData& imageData, const Triangle& triangle)
       alp /= area;
       bet /= area;
       gam /= area;
+
       const double w = 1 / (a.w()*alp + b.w()*bet + c.w()*gam);
       const double depth = w;
       if (depthBuffer) {
@@ -238,61 +327,106 @@ barycentricTriangle(ImageData& imageData, const Triangle& triangle)
         }
       }
 
-      uint32_t pixel;
-      switch (drawMode) {
-        case DRAW_PERSPECTIVE: {
-          const Vector2f uv = (a.uv*alp + b.uv*bet + c.uv*gam);
-          pixel = G3D::pixelAtUV(*textureImageData, uv.u()*w, uv.v()*w);
-          break;
-        }
-        case DRAW_AFFINE: {
-          const Vector2f uv = (a.uv*alp + b.uv*bet + c.uv*gam);
-          pixel = G3D::pixelAtUV(*textureImageData, uv.u(), uv.v());
-          break;
-        }
-        case DRAW_RGB_SHADED: {
-          const Vector3f rgb = (a.rgb*alp + b.rgb*bet + c.rgb*gam);
-          pixel = G3D::colorForRGB(
-            (int)(rgb.x()*w),
-            (int)(rgb.y()*w),
-            (int)(rgb.z()*w)
-          );
-          break;
-        }
-        default:
-        case DRAW_SOLID:
-          pixel = triangle.color;
-          break;
-      } // switch (drawMode)
+      barycentricPixel(imageData, x, y, t, alp, bet, gam, w);
 
-      const uint8_t* rgba = (uint8_t*) &pixel;
-      const uint8_t alpha = rgba[3];
-
-      // Lighting
-      if (alpha) {
-        if (lightsStyle != LIGHTS_STYLE_NONE) {
-          float lightStrength = 1.0;
-          if (lightsStyle ==  LIGHTS_STYLE_FLAT) {
-            const Vector3f faceNormal = G3D::normalize(triangle.normal);
-            const float dot = G3D::dot(lightDirection, faceNormal);
-            lightStrength = std::max(0.5f, dot);
-          }
-          else {
-            // https://stackoverflow.com/a/15625175/1645045
-            Vector3f vertexNormal = (a.normal*alp) + (b.normal*bet) +
-                                    (c.normal*gam);
-            vertexNormal = G3D::normalize(vertexNormal);
-            const float dot = G3D::dot(lightDirection, vertexNormal);
-            lightStrength = std::max(0.5f, dot);
-          }
-          pixel = G3D::lightPixel(pixel, lightStrength);
-        }
-        imageData.pixel(x, y) = pixel;
-        if (depthBuffer) {
-          depthBuffer->unsafeSet(x, y, depth);
-        }
-
-      } // if (alpha)
     } // for x
   } // for y
 } // barycentricTriangle
+
+
+
+void TriangleDrawer::
+barycentricAddTriangle(ImageData& imageData, const Triangle& triangle)
+{
+  Triangle t(triangle);
+
+  Vertex4f& a = t.vertices[0];
+  Vertex4f& b = t.vertices[1];
+  Vertex4f& c = t.vertices[2];
+
+
+  if (drawMode != DRAW_AFFINE) {
+    a.uv /= a.pos.w();
+    b.uv /= b.pos.w();
+    c.uv /= c.pos.w();
+    a.rgb /= a.pos.w();
+    b.rgb /= b.pos.w();
+    c.rgb /= c.pos.w();
+  }
+
+  a.pos.w() = 1.0 / a.pos.w();
+  b.pos.w() = 1.0 / b.pos.w();
+  c.pos.w() = 1.0 / c.pos.w();
+
+  const int w = imageData.width();
+  const int h = imageData.height();
+
+  // Triangle bounding box
+  const double maxXf = std::max(a.x(), std::max(b.x(), c.x()));
+  const double minXf = std::min(a.x(), std::min(b.x(), c.x()));
+  const double maxYf = std::max(a.y(), std::max(b.y(), c.y()));
+  const double minYf = std::min(a.y(), std::min(b.y(), c.y()));
+  const int maxX = std::min(std::ceil(maxXf), (double)w);
+  const int minX = std::max(std::floor(minXf), 0.0);
+  const int maxY = std::min(std::ceil(maxYf), (double)h);
+  const int minY = std::max(std::floor(minYf), 0.0);
+
+  double area = G3D::crossProduct2D(a.pos, b.pos, c.pos);
+
+  Vector4f v0 = a.pos;
+  Vector4f v1 = b.pos;
+  Vector4f v2 = c.pos;
+
+  // Compute the constant delta_s that will be used for the horizontal and vertical steps
+  const float delta_w0_col = (v1.y() - v2.y());
+  const float delta_w1_col = (v2.y() - v0.y());
+  const float delta_w2_col = (v0.y() - v1.y());
+  const float delta_w0_row = (v2.x() - v1.x());
+  const float delta_w1_row = (v0.x() - v2.x());
+  const float delta_w2_row = (v1.x() - v0.x());
+
+  const Vector4f p(minX + 0.5f , minY + 0.5f);
+  float w0_row = G3D::crossProduct2D(v1, v2, p);
+  float w1_row = G3D::crossProduct2D(v2, v0, p);
+  float w2_row = G3D::crossProduct2D(v0, v1, p);
+
+  for (int y = minY; y < maxY; ++y,
+    w0_row += delta_w0_row,
+    w1_row += delta_w1_row,
+    w2_row += delta_w2_row
+  ) {
+    float w0 = w0_row;
+    float w1 = w1_row;
+    float w2 = w2_row;
+//    bool hit = false;
+    for (int x = minX; x < maxX; ++x,
+      w0 += delta_w0_col,
+      w1 += delta_w1_col,
+      w2 += delta_w2_col
+    ) {
+      // crossProduct2D is <= 0 if
+      // 1. Point is in triangle
+      // 2. Vertices are passed in counter-clockwise CCW winding order
+      // 3. Coordinates are y-down screen coordinates
+      bool is_inside = w0 <= 0 && w1 <= 0 && w2 <= 0;
+      if (!is_inside) {
+        continue;
+      }
+
+      const float alp = w0 / area;
+      const float bet = w1 / area;
+      const float gam = w2 / area;
+
+      const double w = 1 / (a.w()*alp + b.w()*bet + c.w()*gam);
+      const double depth = w;
+      if (depthBuffer) {
+        if (depth>=depthBuffer->unsafeGet(x,y)) {
+          continue;
+        }
+      }
+
+      barycentricPixel(imageData, x, y, t, alp, bet, gam, w);
+
+    } // for x
+  } // for y
+} // barycentricAddTriangle
