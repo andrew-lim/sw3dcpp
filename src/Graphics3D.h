@@ -175,21 +175,11 @@ public:
   }
 
   template <class Arr>
-  static Arr ndcToWindow(Arr& point, float windowWidth, float windowHeight)
+  static Arr& ndcToWindow(Arr& ndc, float windowWidth, float windowHeight)
   {
-    const float xNDC = point[0];
-    const float yNDC = point[1];
-
-    // Hack to make sure right and bottom edges are really clipped
-    // to prevent drawing outside viewport
-    //  windowWidth = windowWidth-1;
-    //  windowHeight = windowHeight-1;
-
-    const int xWindow = (windowWidth/2*xNDC + windowWidth/2);
-    const int yWindow = ((-yNDC)*windowHeight/2 + windowHeight/2);
-    point[0] = xWindow;
-    point[1] = yWindow;
-    return point;
+    ndc[0] = (windowWidth*0.5*ndc[0] + windowWidth*0.5);
+    ndc[1] = ((-ndc[1])*windowHeight*0.5 + windowHeight*0.5);
+    return ndc;
   }
 
 };
