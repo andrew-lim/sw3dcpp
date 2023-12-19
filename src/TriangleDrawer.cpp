@@ -20,7 +20,8 @@ void TriangleDrawer::triangle(ImageData& imageData, const Triangle& triangle)
   switch (algo) {
     case SCANLINE: scanlineTriangle(imageData, triangle); return;
     case BARYCENTRIC: barycentricTriangle(imageData, triangle); return;
-    case BARYCENTRIC_ADD: barycentricAddTriangle(imageData, triangle); return;
+    case BARYCENTRIC_O1: barycentricO1(imageData, triangle); return;
+    case BARYCENTRIC_O2: barycentricO2(imageData, triangle); return;
   }
 }
 
@@ -196,7 +197,8 @@ scanlineTriangle(ImageData& imageData, const Triangle& triangle)
   }
 } // texturedTriangle
 
-inline void TriangleDrawer::barycentricPixel(ImageData& imageData,
+inline
+void TriangleDrawer::barycentricPixel(ImageData& imageData,
                                       int x, int y,
                                       const Triangle& t,
                                       float alp, float bet, float gam,
@@ -289,14 +291,14 @@ barycentricTriangle(ImageData& imageData, const Triangle& triangle)
   const int h = imageData.height();
 
   // Triangle bounding box
-  const double maxXf = std::max(a.x(), std::max(b.x(), c.x()));
-  const double minXf = std::min(a.x(), std::min(b.x(), c.x()));
-  const double maxYf = std::max(a.y(), std::max(b.y(), c.y()));
-  const double minYf = std::min(a.y(), std::min(b.y(), c.y()));
-  const int maxX = std::min(std::ceil(maxXf), (double)w);
-  int minX = std::max(std::floor(minXf), 0.0);
-  const int maxY = std::min(std::ceil(maxYf), (double)h);
-  const int minY = std::max(std::floor(minYf), 0.0);
+  const float maxXf = std::max(a.x(), std::max(b.x(), c.x()));
+  const float minXf = std::min(a.x(), std::min(b.x(), c.x()));
+  const float maxYf = std::max(a.y(), std::max(b.y(), c.y()));
+  const float minYf = std::min(a.y(), std::min(b.y(), c.y()));
+  const int maxX = std::min(std::ceil(maxXf), (float)w);
+  int minX = std::max((int)std::floor(minXf), 0);
+  const int maxY = std::min(std::ceil(maxYf), (float)h);
+  const int minY = std::max((int)std::floor(minYf), 0);
 
   double area = G3D::crossProduct2D(a.pos, b.pos, c.pos);
 
@@ -308,11 +310,11 @@ barycentricTriangle(ImageData& imageData, const Triangle& triangle)
       // 1. Point is in triangle
       // 2. Vertices are passed in counter-clockwise CCW winding order
       // 3. Coordinates are y-down screen coordinates
-      double alp = G3D::crossProduct2D(b.pos, c.pos, p);
+      float alp = G3D::crossProduct2D(b.pos, c.pos, p);
       if (alp > 0) continue;
-      double bet = G3D::crossProduct2D(c.pos, a.pos, p);
+      float bet = G3D::crossProduct2D(c.pos, a.pos, p);
       if (bet > 0) continue;
-      double gam = G3D::crossProduct2D(a.pos, b.pos, p);
+      float gam = G3D::crossProduct2D(a.pos, b.pos, p);
       if (gam > 0) continue;
 
       alp /= area;
@@ -336,7 +338,7 @@ barycentricTriangle(ImageData& imageData, const Triangle& triangle)
 
 
 void TriangleDrawer::
-barycentricAddTriangle(ImageData& imageData, const Triangle& triangle)
+barycentricO1(ImageData& imageData, const Triangle& triangle)
 {
   Triangle t(triangle);
 
@@ -377,13 +379,18 @@ barycentricAddTriangle(ImageData& imageData, const Triangle& triangle)
   Vector4f v1 = b.pos;
   Vector4f v2 = c.pos;
 
-  // Compute the constant delta_s that will be used for the horizontal and vertical steps
-  const float delta_w0_col = (v1.y() - v2.y());
-  const float delta_w1_col = (v2.y() - v0.y());
-  const float delta_w2_col = (v0.y() - v1.y());
-  const float delta_w0_row = (v2.x() - v1.x());
-  const float delta_w1_row = (v0.x() - v2.x());
-  const float delta_w2_row = (v1.x() - v0.x());
+  // Compute the constant delta_s that will be used for the horizontal and
+  // vertical steps
+  const float deltacols[3] = {
+    v1.y() - v2.y(),
+    v2.y() - v0.y(),
+    v0.y() - v1.y()
+  };
+  const float deltarows[3] = {
+    v2.x() - v1.x(),
+    v0.x() - v2.x(),
+    v1.x() - v0.x()
+  };
 
   const Vector4f p(minX + 0.5f , minY + 0.5f);
   float w0_row = G3D::crossProduct2D(v1, v2, p);
@@ -391,18 +398,17 @@ barycentricAddTriangle(ImageData& imageData, const Triangle& triangle)
   float w2_row = G3D::crossProduct2D(v0, v1, p);
 
   for (int y = minY; y < maxY; ++y,
-    w0_row += delta_w0_row,
-    w1_row += delta_w1_row,
-    w2_row += delta_w2_row
+    w0_row += deltarows[0],
+    w1_row += deltarows[1],
+    w2_row += deltarows[2]
   ) {
     float w0 = w0_row;
     float w1 = w1_row;
     float w2 = w2_row;
-//    bool hit = false;
     for (int x = minX; x < maxX; ++x,
-      w0 += delta_w0_col,
-      w1 += delta_w1_col,
-      w2 += delta_w2_col
+      w0 += deltacols[0],
+      w1 += deltacols[1],
+      w2 += deltacols[2]
     ) {
       // crossProduct2D is <= 0 if
       // 1. Point is in triangle
@@ -430,3 +436,176 @@ barycentricAddTriangle(ImageData& imageData, const Triangle& triangle)
     } // for x
   } // for y
 } // barycentricAddTriangle
+
+inline int TriangleDrawer::barycentricScanline(ImageData& imageData,
+                                               const Triangle& triangle,
+                                               int leftx,
+                                               int rightx,
+                                               int y,
+                                               float area,
+                                               const float deltacols[3])
+{
+  const Vertex4f& a = triangle.vertices[0];
+  const Vertex4f& b = triangle.vertices[1];
+  const Vertex4f& c = triangle.vertices[2];
+  int newMinX = -1;
+  int finalX = 0;
+  bool wasInside = false;
+  const int xstart = std::max(0, leftx);
+  const int xend   = std::min((int)imageData.width()-1, rightx) ;
+  const Vector4f p(xstart + 0.5f , y + 0.5f);
+  double w0 = G3D::crossProduct2D(b.pos, c.pos, p);
+  double w1 = G3D::crossProduct2D(c.pos, a.pos, p);
+  double w2 = G3D::crossProduct2D(a.pos, b.pos, p);
+  for (int x=xstart; x<=xend; x++,
+    w0 += deltacols[0],
+    w1 += deltacols[1],
+    w2 += deltacols[2]
+  )
+  {
+    const bool inside = w0 <= 0 && w1 <= 0 && w2 <= 0;
+    if (!inside) {
+      if (wasInside) {
+        finalX = x;
+        break;
+      }
+      continue;
+    }
+    if (-1==newMinX) {
+      newMinX = x;
+    }
+    wasInside = true;
+    const double alp = w0 / area;
+    const double bet = w1 / area;
+    const double gam = w2 / area;
+    const double w = 1 / (a.w()*alp + b.w()*bet + c.w()*gam);
+    const double depth = w;
+    if (depthBuffer) {
+      if (depth>=depthBuffer->unsafeGet(x,y)) {
+        continue;
+      }
+    }
+    barycentricPixel(imageData, x, y, triangle, alp, bet, gam, w);
+    finalX = x;
+  }
+
+  if (-1!=newMinX && newMinX!=finalX) {
+    return newMinX;
+  }
+  return leftx;
+} // barycentricScanline
+
+void TriangleDrawer::
+barycentricO2(ImageData& imageData, const Triangle& triangle)
+{
+  Vector2f top(triangle.vertices[0].pos);
+  Vector2f mid(triangle.vertices[1].pos);
+  Vector2f bot(triangle.vertices[2].pos);
+
+  // Sort the points vertically
+  if (mid.y() < top.y()) { std::swap(mid, top); }
+  if (bot.y() < top.y()) { std::swap(bot, top); }
+  if (bot.y() < mid.y()) { std::swap(bot, mid); }
+
+  const int topy = top.y();
+  const int midy = mid.y();
+  const int boty = bot.y();
+
+  // Setup triangle to pass to barycentricScanline
+  Triangle t(triangle);
+  Vertex4f& a = t.vertices[0];
+  Vertex4f& b = t.vertices[1];
+  Vertex4f& c = t.vertices[2];
+
+  // Divide by 1/z for interpolation
+  if (drawMode != DRAW_AFFINE) {
+    a.uv /= a.pos.w();
+    b.uv /= b.pos.w();
+    c.uv /= c.pos.w();
+    a.rgb /= a.pos.w();
+    b.rgb /= b.pos.w();
+    c.rgb /= c.pos.w();
+  }
+  a.pos.w() = 1.0 / a.pos.w();
+  b.pos.w() = 1.0 / b.pos.w();
+  c.pos.w() = 1.0 / c.pos.w();
+
+  // Triangle bounding box
+  const float maxXf = std::max(a.x(), std::max(b.x(), c.x()));
+  const int maxX = std::min(std::ceil(maxXf), (float)imageData.width());
+  const int maxY = ceil(boty);
+
+  double area = G3D::crossProduct2D(a.pos, b.pos, c.pos);
+
+  // Horizontal barycentric deltas
+  const float deltacols[3] = {b.y() - c.y(), c.y() - a.y(), a.y() - b.y()};
+
+  const int dytopmid = midy - topy; // Top to Mid Distance
+  const int dytopbot = boty - topy; // Top to Bottom Distance
+
+  // The middle point on the top-bottom edge
+  const float mid2x = dytopbot // check to prevent divide by 0
+                      ? (top.x() + ((bot.x() - top.x())/dytopbot) * dytopmid)
+                      : bot.x();
+
+  // Is mid to the left of mid2 (i.e. top-bottom edge is right of mid)
+  const bool isMidLeft = mid.x() <= mid2x;
+
+  // Make sure mid is left of mid2 because we will
+  // draw the horizontal scan line from left-to-right
+  if (!isMidLeft) {
+    mid.x() = mid2x;
+  }
+
+  // Top Half Triangle
+  int ystart = std::max(0, topy);
+  int yend   = std::min((int)imageData.height()-1, midy);
+  // Left edge slopes down - start drawing from top
+  if (top.x() <= mid.x()) {
+    int left = top.x();
+    for (int y=ystart; y<=yend; y++) {
+      const int newMinX = barycentricScanline(imageData, t, left, maxX, y, area,
+                                              deltacols);
+      if (y>ystart && y<yend) {
+        left = std::max(left, newMinX);
+      }
+    }
+  }
+  // Left edge slopes up - start drawing from bottom
+  else  {
+    int left = mid.x();
+    for (int y=yend; y>=ystart; y--) {
+      const int newMinX = barycentricScanline(imageData, t, left, maxX, y, area,
+                                              deltacols);
+      if (y>ystart && y<yend) {
+        left = std::max(left, newMinX);
+      }
+    }
+  }
+
+  // Bottom Half Triangle
+  ystart = std::max(0, midy);
+  yend   = std::min((int)imageData.height()-1, maxY);
+  // Left edge slopes down - start drawing from top
+  if (mid.x() <= bot.x()) {
+    int left = mid.x();
+    for (int y=ystart; y<=yend; y++) {
+      const int newMinX = barycentricScanline(imageData, t, left, maxX, y, area,
+                                              deltacols);
+      if (y>ystart && y<yend) {
+        left = std::max(left, newMinX);
+      }
+    }
+  }
+  // Left edge slopes up - start drawing from bottom
+  else  {
+    int left = bot.x();
+    for (int y=yend; y>=ystart; y--) {
+      const int newMinX = barycentricScanline(imageData, t, left, maxX, y, area,
+                                              deltacols);
+      if (y>ystart && y<yend) {
+        left = std::max(left, newMinX);
+      }
+    }
+  }
+}

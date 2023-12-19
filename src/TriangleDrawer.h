@@ -20,7 +20,7 @@ public:
   };
 
   enum Algo {
-    SCANLINE, BARYCENTRIC, BARYCENTRIC_ADD
+    SCANLINE, BARYCENTRIC, BARYCENTRIC_O1, BARYCENTRIC_O2
   };
 
   enum LightsStyle {
@@ -61,7 +61,18 @@ public:
   void barycentricTriangle(ImageData& imageData, const Triangle& triangle);
 
   // Optimized barycentric approach that uses interpolates using additions
-  void barycentricAddTriangle(ImageData& imageData, const Triangle& triangle);
+  void barycentricO1(ImageData& imageData, const Triangle& triangle);
+
+  // Barycentric approach that reduces checks on pixels that lie on the outside
+  // of the triangle.
+  // First the triangle is broken into 2 smaller triangles - a flat-bottom and
+  // flat-top. Then for each triangle 2 main things happen:
+  // 1. While scanning a row hori/ontally starting from the left most vertex,
+  //    the x-coordinate of the first pixel found inside the triangle becomes
+  //    the starting x for checking the next row.
+  // 2. While inside the triangle, stop scanning the current row once the first
+  //    pixel outside the triangle is found.
+  void barycentricO2(ImageData& imageData, const Triangle& triangle);
 
 private:
 
@@ -79,6 +90,12 @@ private:
                         float alp, float bet, float gam,
                         double w);
 
+  int barycentricScanline(ImageData& imageData,
+                          const Triangle& triangle,
+                          int leftx, int rightx,
+                          int y,
+                          float area,
+                          const float deltacols[3]);
 }; // class TriangleDrawer
 } // namespace al
 } // namespace graphics
