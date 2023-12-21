@@ -263,7 +263,7 @@ void TriangleDrawer::barycentricPixel(ImageData& imageData,
     }
 
   } // if (alpha)
-}
+} // barycentricPixel
 
 void TriangleDrawer::
 barycentricTriangle(ImageData& imageData, const Triangle& triangle)
@@ -334,8 +334,6 @@ barycentricTriangle(ImageData& imageData, const Triangle& triangle)
     } // for x
   } // for y
 } // barycentricTriangle
-
-
 
 void TriangleDrawer::
 barycentricO1(ImageData& imageData, const Triangle& triangle)
@@ -435,7 +433,7 @@ barycentricO1(ImageData& imageData, const Triangle& triangle)
 
     } // for x
   } // for y
-} // barycentricAddTriangle
+} // barycentricO1
 
 inline int TriangleDrawer::barycentricScanline(ImageData& imageData,
                                                const Triangle& triangle,
@@ -608,4 +606,4 @@ barycentricO2(ImageData& imageData, const Triangle& triangle)
       }
     }
   }
-}
+} // barycentricO2

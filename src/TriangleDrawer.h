@@ -52,22 +52,24 @@ public:
   // Delegates drawing to the other triangle drawing methods
   void triangle(ImageData& imageData, const Triangle& triangle);
 
-  // Triangle drawing methods
-
   // Standard scanline approach that uses slope and top/bottom halves
   void scanlineTriangle(ImageData& imageData, const Triangle& triangle);
 
   // Simple unoptimized barycentric approach
+  // Checks every pixel in the bounding box
   void barycentricTriangle(ImageData& imageData, const Triangle& triangle);
 
   // Optimized barycentric approach that uses interpolates using additions
+  // Based on the following links:
+  // https://fgiesen.wordpress.com/2013/02/10/optimizing-the-basic-rasterizer/
+  // https://github.com/gustavopezzi/triangle-rasterizer-float
   void barycentricO1(ImageData& imageData, const Triangle& triangle);
 
-  // Barycentric approach that reduces checks on pixels that lie on the outside
-  // of the triangle.
+  // Similar to barycentricO1 but also reduces checks on pixels that lie on the
+  // outside of the triangle.
   // First the triangle is broken into 2 smaller triangles - a flat-bottom and
   // flat-top. Then for each triangle 2 main things happen:
-  // 1. While scanning a row hori/ontally starting from the left most vertex,
+  // 1. While scanning a row horizontally starting from the left most vertex,
   //    the x-coordinate of the first pixel found inside the triangle becomes
   //    the starting x for checking the next row.
   // 2. While inside the triangle, stop scanning the current row once the first
@@ -84,12 +86,14 @@ private:
                 const Vertex4f& right,
                 int y);
 
+  // Used by all the barycentric drawing methods
   void barycentricPixel(ImageData& imageData,
                         int x, int y,
                         const Triangle& t,
                         float alp, float bet, float gam,
                         double w);
 
+  // Used by barycentricO2
   int barycentricScanline(ImageData& imageData,
                           const Triangle& triangle,
                           int leftx, int rightx,
