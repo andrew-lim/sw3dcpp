@@ -118,12 +118,12 @@ public:
   template <class V>
   static V crossProduct(const V& a, const V& b)
   {
-		const float x = a[1] * b[2] - a[2] * b[1];
-		const float y = a[2] * b[0] - a[0] * b[2];
-		const float z = a[0] * b[1] - a[1] * b[0];
+    const float x = a[1] * b[2] - a[2] * b[1];
+    const float y = a[2] * b[0] - a[0] * b[2];
+    const float z = a[0] * b[1] - a[1] * b[0];
 
     V out;
-		out[0] = x;
+    out[0] = x;
     out[1] = y;
     out[2] = z;
     return out;
