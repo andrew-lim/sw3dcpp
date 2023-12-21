@@ -190,6 +190,7 @@ private:
   Vector4f _lightNormal;
   bool dynamicLights = false;
   Font font;
+  HFONT _oldHFont = NULL;
 };
 
 //------------------------------------------------------------------------------
@@ -248,7 +249,7 @@ GameImpl::GameImpl()
 
   _lightNormal = G3D::normalize( LIGHT_NORMAL_EYE );
 
-//  font.create( "Courier New", 10 );
+  font.create( "Consolas", 10 );
 
 //  startTimer();
   resetGame();
@@ -1069,8 +1070,15 @@ void GameImpl::resetGame()
 
   _xrot = 0;
   _yrot = 0;
+  if (_oldHFont) {
+    SelectObject(bufferDC, _oldHFont);
+    _oldHFont = NULL;
+  }
   bufferDC.create(_clientWidth, _clientHeight);
-//  SelectObject(bufferDC, font.getHandle());
+  HFONT newHFont = font.getHandle();
+  if (newHFont) {
+    _oldHFont = (HFONT)SelectObject(bufferDC, font.getHandle());
+  }
   SetBkMode(bufferDC, TRANSPARENT);
   SetTextColor(bufferDC, RGB(255,255,0));
   zbuffer = ZBuffer(_clientWidth, _clientHeight);
@@ -1194,14 +1202,23 @@ void GameImpl::updateGame()
 
 void GameImpl::drawFPS(HDC hdc)
 {
-  const int buflen = 256;
+  const int buflen = 512;
   static char buf[buflen] = {0};
   int len = 0;
   if (_fpsOn) {
-    len += snprintf(buf+len, buflen-len, "FPS: %lu\n", _currentFPS);
+    len += snprintf(buf+len, buflen-len, "FPS: %lu", _currentFPS);
   }
   if (_sceneInfoOn) {
-    len += snprintf(buf+len, buflen-len, "Triangles: %u", _scaledMesh.size());
+    len += snprintf(buf+len, buflen-len, "\nTriangles: %u", _scaledMesh.size());
+    len += snprintf(buf+len, buflen-len, "\nScale: %.2f", _scale);
+    char* algo = (char*)"Scanline";
+    switch (_triangleDrawer.algo) {
+      case TriangleDrawer::BARYCENTRIC: algo=(char*)"Barycentric"; break;
+      case TriangleDrawer::BARYCENTRIC_O1: algo=(char*)"Barycentric O1"; break;
+      case TriangleDrawer::BARYCENTRIC_O2: algo=(char*)"Barycentric O2"; break;
+      default: break;
+    }
+    len += snprintf(buf+len, buflen-len, "\nAlgorithm: %s", algo);
   }
   RECT rc = {0} ;
   GetClientRect( hwnd, &rc ) ;
