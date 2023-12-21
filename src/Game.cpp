@@ -85,6 +85,7 @@ private:
     , MI1366x768
     , MI1920x1080
     , MIShowFPS
+    , MIShowSceneInfo
     , MIScale001
     , MIScale01
     , MIScale05
@@ -156,7 +157,7 @@ private:
   ImageData         screenImageData;
 
   bool              _backfaceCullingOn;
-  bool              _zbufferOn, _fpsOn;
+  bool              _zbufferOn, _fpsOn, _sceneInfoOn;
   vector<ImageData> _textureImageDatas;
 
   int _clientWidth = CLIENT_WIDTH;
@@ -204,6 +205,7 @@ GameImpl::GameImpl()
   , _backfaceCullingOn(true)
   , _zbufferOn(true)
   , _fpsOn(true)
+  , _sceneInfoOn(true)
   , _xrot()
   , _yrot()
   , _currentFPS()
@@ -298,7 +300,6 @@ void GameImpl::createMenus()
   _optionsMenu.add("Wireframe", MIWireframe);
   _optionsMenu.add("Backface Culling", MIBackfacCulling);
   _optionsMenu.add("Z Buffer", MIZBuffer);
-  _optionsMenu.add("Show FPS / Info", MIShowFPS);
   _optionsMenu.addSeparator();
   _optionsMenu.add("640x360", MI640x360);
   _optionsMenu.add("640x480", MI640x480);
@@ -312,7 +313,10 @@ void GameImpl::createMenus()
   _optionsMenu.add("Black Background", MIBlackBackground);
   _optionsMenu.add("Blue Background", MIBlueBackground);
 
-  _textureMenu.add("Show Default Cube", MIMeshDefault ) ;
+  _textureMenu.add("Show FPS", MIShowFPS);
+  _textureMenu.add("Show Scene Info", MIShowSceneInfo);
+  _textureMenu.addSeparator();
+  _textureMenu.add("Load Default Cube", MIMeshDefault ) ;
   for (size_t i=0; i<_textureImageDatas.size(); ++i) {
     TCHAR s[128];
     sprintf(s, "Cube Texture %d", (int)(i+1));
@@ -584,6 +588,10 @@ LRESULT GameImpl::handleMessage( UINT msg, WPARAM wParam, LPARAM lParam )
           _fpsOn = !_fpsOn;
           break;
 
+        case MIShowSceneInfo:
+          _sceneInfoOn = !_sceneInfoOn;
+          break;
+
         case MIBackfacCulling:
           _backfaceCullingOn = !_backfaceCullingOn;
           break;
@@ -718,7 +726,6 @@ LRESULT GameImpl::handleMessage( UINT msg, WPARAM wParam, LPARAM lParam )
         _optionsMenu.setMenuItemChecked( MIWireframe, _drawWireframe );
         _optionsMenu.setMenuItemChecked( MIZBuffer, _zbufferOn );
         _optionsMenu.setMenuItemChecked( MIBackfacCulling, _backfaceCullingOn );
-        _optionsMenu.setMenuItemChecked( MIShowFPS, _fpsOn );
         _optionsMenu.setMenuItemChecked(
           MI640x360, _clientWidth==640 && _clientHeight==360
         );
@@ -746,6 +753,8 @@ LRESULT GameImpl::handleMessage( UINT msg, WPARAM wParam, LPARAM lParam )
       }
       else if (hMenu == _textureMenu) {
         // _textureMenu.setMenuItemChecked( MITexture1+_textureID, true);
+        _textureMenu.setMenuItemChecked( MIShowFPS, _fpsOn );
+        _textureMenu.setMenuItemChecked( MIShowSceneInfo, _sceneInfoOn );
       }
       else if (hMenu == _meshMenu) {
         _meshMenu.setMenuItemChecked( MIScale001, _scale==0.01f);
@@ -799,7 +808,7 @@ LRESULT GameImpl::handleMessage( UINT msg, WPARAM wParam, LPARAM lParam )
     {
       PAINTSTRUCT ps ;
       HDC hDC = BeginPaint( hwnd, &ps ) ;
-      if (_fpsOn) {
+      if (_fpsOn || _sceneInfoOn) {
         drawWorld(bufferDC);
         drawFPS(bufferDC);
         bufferDC.draw( hDC );
@@ -1185,16 +1194,19 @@ void GameImpl::updateGame()
 
 void GameImpl::drawFPS(HDC hdc)
 {
-  if (!_fpsOn) {
-    return;
+  const int buflen = 256;
+  static char buf[buflen] = {0};
+  int len = 0;
+  if (_fpsOn) {
+    len += snprintf(buf+len, buflen-len, "FPS: %lu\n", _currentFPS);
   }
-  static char buf[256] = {0};
-  snprintf(buf, 256, "FPS: %lu\nTriangles: %u",
-           _currentFPS, _scaledMesh.size());
+  if (_sceneInfoOn) {
+    len += snprintf(buf+len, buflen-len, "Triangles: %u", _scaledMesh.size());
+  }
   RECT rc = {0} ;
   GetClientRect( hwnd, &rc ) ;
   DrawText(hdc, buf, -1, &rc, DT_LEFT|DT_TOP);
-  if (!filepath.empty()) {
+  if (_sceneInfoOn && !filepath.empty()) {
     DrawTextW(hdc, filepath.c_str(), -1, &rc, DT_LEFT|DT_BOTTOM|DT_SINGLELINE);
   }
 }
