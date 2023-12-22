@@ -91,6 +91,13 @@ public:
   Vector3g operator-(T r) const { return sub(r); }
   Vector3g operator+(T r) const { return add(r); }
   Vector3g operator*(T r) const { return mul(r); }
+  Vector3g& operator+=(const Vector3g& r)
+  {
+    values[0] += r.values[0];
+    values[1] += r.values[1];
+    values[2] += r.values[2];
+    return *this;
+  }
 
   template <class Arr>
   Arr array() const

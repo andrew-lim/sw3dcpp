@@ -891,17 +891,13 @@ void GameImpl::generateMeshNormals(vector<Triangle>& mesh)
                                           vertices[2].pos);
     t->normal = Vector3f(normal[0], normal[1], normal[2]);
 
-    Vector3f& vertexNormal1 = vertexNormals[ vertices[0].id ];
-    vertexNormal1 = vertexNormal1.add( t->normal );
-
-    Vector3f& vertexNormal2 = vertexNormals[ vertices[1].id ];
-    vertexNormal2 = vertexNormal2.add( t->normal );
-
-    Vector3f& vertexNormal3 = vertexNormals[ vertices[2].id ];
-    vertexNormal3 = vertexNormal3.add( t->normal );
+    // Add face normal to each vertex normal
+    for (int iv=0; iv<3; iv++) {
+      vertexNormals[vertices[iv].id] += t->normal;
+    }
   }
 
-  // Normalize vertices normal
+  // Normalize vertex normals
   for (size_t i=0; i<vertexNormals.size(); i++) {
     vertexNormals[i] = G3D::normalize(vertexNormals[i]);
   }
