@@ -86,6 +86,7 @@ private:
     , MI1920x1080
     , MIShowFPS
     , MIShowSceneInfo
+    , MIToggleConsole
     , MIScale001
     , MIScale01
     , MIScale05
@@ -316,6 +317,7 @@ void GameImpl::createMenus()
 
   _textureMenu.add("Show FPS", MIShowFPS);
   _textureMenu.add("Show Scene Info", MIShowSceneInfo);
+  _textureMenu.add("Toggle Console", MIToggleConsole);
   _textureMenu.addSeparator();
   _textureMenu.add("Load Default Cube", MIMeshDefault ) ;
   for (size_t i=0; i<_textureImageDatas.size(); ++i) {
@@ -592,6 +594,16 @@ LRESULT GameImpl::handleMessage( UINT msg, WPARAM wParam, LPARAM lParam )
         case MIShowSceneInfo:
           _sceneInfoOn = !_sceneInfoOn;
           break;
+
+        case MIToggleConsole: {
+          HWND consoleWin = GetConsoleWindow();
+          if (IsWindowVisible(consoleWin)) {
+            ShowWindow(consoleWin, SW_HIDE);
+          } else {
+            ShowWindow(consoleWin, SW_SHOWNORMAL);
+          }
+          break;
+        }
 
         case MIBackfacCulling:
           _backfaceCullingOn = !_backfaceCullingOn;
@@ -910,11 +922,11 @@ void GameImpl::generateMeshNormals(vector<Triangle>& mesh)
       int vid = vertices[iv].id;
       if (vertices[iv].id == -1) {
         printf("Vertex %d for triangle %d has no id\n", iv, i);
-         throw runtime_error("vertex has no id, see console");
+        throw runtime_error("vertex has no id, see console");
       }
       if (vid<0 || vid>=(int)vertexNormals.size()) {
-         printf("Vertex %d for triangle %d has no id\n", iv, i);
-         throw runtime_error("vid out of range");
+        printf("Vertex %d for triangle %d has no id\n", iv, i);
+        throw runtime_error("vid out of range");
       }
       Vector3f normal = vertexNormals[ vid ];
       vertices[iv].normal= normal;
