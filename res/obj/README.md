@@ -11,3 +11,12 @@ https://www.models-resource.com/playstation/residentevil/model/60200/
 
 Lara Croft
 https://www.models-resource.com/pc_computer/tombraider2/model/45946/
+
+Spyro - Artisans Hub
+https://www.models-resource.com/playstation/spyrothedragon/model/9920/
+
+Game Cube Spyro
+https://www.models-resource.com/gamecube/spyroenterthedragonfly/model/14041/
+
+Doom E1M1
+https://www.models-resource.com/pc_computer/doom/model/40482/
