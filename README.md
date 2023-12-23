@@ -29,8 +29,9 @@ displayed with [SetDIBitsToDevice](https://learn.microsoft.com/en-us/windows/win
 
 ## Features
 
+- 4 triangle rendering algorithms: standard scanline, barycentric, and 2 optimized barycentric variants
 - Displays a simple textured cube at the start
-- Loading .OBJ and .MTL files with BMP/PNG support
+- Loading .OBJ and .MTL files with BMP/PNG support. Sample models can be loaded from the Debug menu
 - Solid, Affine and Nearest Neighbour Perspective-Correct Texture Mapping
 - Clipping by near plane only, or clipping by all 6 planes
 - Z Buffer
