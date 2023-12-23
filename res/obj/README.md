@@ -1,5 +1,8 @@
 # Test Models
 
+Teapot
+https://github.com/alecjacobson/common-3d-test-models
+
 Megaman Legends model downloaded from:
 https://www.models-resource.com/playstation/megamanlegends/model/34905/
 
