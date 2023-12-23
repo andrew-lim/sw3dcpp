@@ -119,6 +119,11 @@ private:
     , MIMesh1
     , MIControls
     , MIAbout
+    , MILoadTeapot
+    , MILoadSpyro
+    , MILoadArtisans
+    , MILoadE1M1
+    , MILoadMegaman
   };
 
   bool _drawWireframeOnly;
@@ -148,6 +153,7 @@ private:
   void showOpenOBJDialog();
   void showControls();
   void showAbout();
+  void loadTestOBJ(int id);
   LRESULT onDropFiles( WPARAM, LPARAM );
   static void CALLBACK TimeProc(UINT uID, UINT uMsg, DWORD_PTR dwUser,
                                 DWORD_PTR d1, DWORD_PTR d2);
@@ -185,7 +191,6 @@ private:
   static const int CLIP_NEAR_AND_FAR = 1;
   static const int CLIP_ALL = 2;
   int _clipMode = CLIP_NEAR_ONLY;
-  bool _lightsOn = true;
   TriangleDrawer _triangleDrawer;
   LightSource _lightSource = LIGHT_SOURCE_EYE;
   Vector4f _lightNormal;
@@ -318,6 +323,12 @@ void GameImpl::createMenus()
   _textureMenu.add("Show FPS", MIShowFPS);
   _textureMenu.add("Show Scene Info", MIShowSceneInfo);
   _textureMenu.add("Toggle Console", MIToggleConsole);
+  _textureMenu.addSeparator();
+  _textureMenu.add("Load Teapot", MILoadTeapot);
+  _textureMenu.add("Load Spyro", MILoadSpyro);
+  _textureMenu.add("Load Artisans Hub", MILoadArtisans);
+  _textureMenu.add("Load Doom E1M1", MILoadE1M1);
+  _textureMenu.add("Load Megaman", MILoadMegaman);
   _textureMenu.addSeparator();
   _textureMenu.add("Load Default Cube", MIMeshDefault ) ;
   for (size_t i=0; i<_textureImageDatas.size(); ++i) {
@@ -516,6 +527,69 @@ void GameImpl::showAbout()
                    TEXT("About"), MB_OK);
 }
 
+void GameImpl::loadTestOBJ(int id)
+{
+  switch (id)
+  {
+    case MILoadTeapot:
+      loadOBJ(L"..\\res\\obj\\teapot.obj");
+      _drawWireframe = false;
+      _camera.x = -80;
+      _camera.y = 16;
+      _camera.z = 112;
+      _camera.rot = G3D::deg2rad(6);
+      _camera.vrot = G3D::deg2rad(-38);
+      _scale = 32;
+      _triangleDrawer.lightsStyle = TriangleDrawer::LIGHTS_STYLE_SMOOTH;
+      _triangleDrawer.drawMode = TriangleDrawer::DRAW_SOLID;
+      _backgroundColor = 0;
+      break;
+
+    case MILoadSpyro:
+      loadOBJ(L"..\\res\\obj\\spyro\\Spyro.obj");
+      _drawWireframe = false;
+      _camera.z = 80;
+      _triangleDrawer.lightsStyle = TriangleDrawer::LIGHTS_STYLE_SMOOTH;
+      _triangleDrawer.drawMode = TriangleDrawer::DRAW_PERSPECTIVE;
+      _backgroundColor = 0;
+      break;
+
+    case MILoadArtisans:
+      loadOBJ(L"..\\res\\obj\\artisans\\artisans_hub.obj");
+      _drawWireframe = false;
+      _camera.z = 80;
+      _scale = 4;
+      _triangleDrawer.lightsStyle = TriangleDrawer::LIGHTS_STYLE_NONE;
+      _triangleDrawer.drawMode = TriangleDrawer::DRAW_PERSPECTIVE;
+      _backgroundColor=ImageData::makePixel(250, 145, 64); // BGR
+      break;
+
+    case MILoadMegaman:
+      loadOBJ(L"..\\res\\obj\\megamanlegends\\Megaman.obj");
+      _drawWireframe = false;
+      _camera.x = 178;
+      _camera.y = -52;
+      _camera.z = 80;
+      _camera.rot = G3D::deg2rad(194);
+      _scale = 8;
+      _triangleDrawer.lightsStyle = TriangleDrawer::LIGHTS_STYLE_NONE;
+      _triangleDrawer.drawMode = TriangleDrawer::DRAW_PERSPECTIVE;
+      _backgroundColor=ImageData::makePixel(250, 145, 64); // BGR
+      break;
+
+    case MILoadE1M1:
+      loadOBJ(L"..\\res\\obj\\doom_e1m1\\Doom_E1M1.obj");
+      _camera.x = 2116;
+      _camera.y = -1892;
+      _camera.z = 120;
+      _drawWireframe = false;
+      _triangleDrawer.lightsStyle = TriangleDrawer::LIGHTS_STYLE_NONE;
+      _triangleDrawer.drawMode = TriangleDrawer::DRAW_PERSPECTIVE;
+      _backgroundColor = 0;
+      break;
+  }
+}
+
 LRESULT GameImpl::handleMessage( UINT msg, WPARAM wParam, LPARAM lParam )
 {
   switch ( msg )
@@ -676,6 +750,14 @@ LRESULT GameImpl::handleMessage( UINT msg, WPARAM wParam, LPARAM lParam )
         case MILightSourceEye:
           _lightSource = LIGHT_SOURCE_EYE;
           _lightNormal = G3D::normalize( LIGHT_NORMAL_EYE );
+          break;
+
+        case MILoadTeapot:
+        case MILoadSpyro:
+        case MILoadE1M1:
+        case MILoadMegaman:
+        case MILoadArtisans:
+          loadTestOBJ(wID);
           break;
 
         case MIControls: showControls(); break;
@@ -1214,14 +1296,20 @@ void GameImpl::drawFPS(HDC hdc)
   static char buf[buflen] = {0};
   int len = 0;
   if (_fpsOn) {
-    len += snprintf(buf+len, buflen-len, "FPS: %lu", _currentFPS);
+    len += snprintf(buf+len, buflen-len, "FPS: %lu\n", _currentFPS);
   }
   if (_sceneInfoOn) {
     const float eyeX = _camera.y;
     const float eyeY = _camera.z;
     const float eyeZ = -_camera.x;
-    len += snprintf(buf+len, buflen-len, "\nCamera: %.2f, %.2f, %.2f",
+    const float xrot = G3D::rad2deg(_camera.rot);
+    const float yrot = G3D::rad2deg(_camera.vrot);
+    len += snprintf(buf+len, buflen-len, "Pos: (%.2f, %.2f, %.2f)",
+                    _camera.x, _camera.y, _camera.z);
+    len += snprintf(buf+len, buflen-len, "\nCam: (%.2f, %.2f, %.2f)",
                     eyeX, eyeY, eyeZ);
+    len += snprintf(buf+len, buflen-len, "\nRot: (%.2f, %.2f)",
+                     xrot, yrot);
     len += snprintf(buf+len, buflen-len, "\nTriangles: %u", _scaledMesh.size());
     len += snprintf(buf+len, buflen-len, "\nScale: %.2f", _scale);
     char* algo = (char*)"Scanline";
