@@ -250,7 +250,7 @@ GameImpl::GameImpl()
 
   _lightNormal = G3D::normalize( LIGHT_NORMAL_EYE );
 
-  font.create( "Consolas", 10 );
+  font.create( "Consolas", 9 );
 
 //  startTimer();
   resetGame();
@@ -1217,6 +1217,11 @@ void GameImpl::drawFPS(HDC hdc)
     len += snprintf(buf+len, buflen-len, "FPS: %lu", _currentFPS);
   }
   if (_sceneInfoOn) {
+    const float eyeX = _camera.y;
+    const float eyeY = _camera.z;
+    const float eyeZ = -_camera.x;
+    len += snprintf(buf+len, buflen-len, "\nCamera: %.2f, %.2f, %.2f",
+                    eyeX, eyeY, eyeZ);
     len += snprintf(buf+len, buflen-len, "\nTriangles: %u", _scaledMesh.size());
     len += snprintf(buf+len, buflen-len, "\nScale: %.2f", _scale);
     char* algo = (char*)"Scanline";
