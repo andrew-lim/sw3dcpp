@@ -94,7 +94,7 @@ Window::wndproc( HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam )
   {
     self = (Window*)(((LPCREATESTRUCT)lParam)->lpCreateParams);    
     self->hwnd = hwnd ;    
-    SetWindowLongPtr(hwnd, GWLP_USERDATA, (LONG)(LONG_PTR)(self));
+    SetWindowLongPtr(hwnd, GWLP_USERDATA, (LONG_PTR)(self));
   } 
   
   else if ( WM_DESTROY == msg )
