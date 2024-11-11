@@ -5,6 +5,11 @@
 
 namespace al { namespace graphics {
 
+/*
+Contains methods to clip vertices in clip space.
+Clip space is 1 step away from NDC (normalized device coordinates).
+Perspective division by w hasn't happened yet.
+*/
 class ClipSpace
 {
 public:
