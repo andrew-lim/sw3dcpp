@@ -3,16 +3,6 @@
 using namespace al::graphics;
 using namespace std;
 
-float ClipSpace::signedDistanceRatio(const Vertex4f& src,
-                                     const Vertex4f& dst,
-                                     int ixyz,
-                                     int planeSign)
-{
-  const float d1 = (src.get(ixyz) - src.w()*planeSign);
-  const float d2 = (dst.get(ixyz) - dst.w()*planeSign);
-  return d1/(d1-d2);
-}
-
 vector<Triangle> ClipSpace::clip(const Triangle& triangle,
                                  int ixyz,
                                  int planeSign)

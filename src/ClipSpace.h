@@ -22,12 +22,13 @@ public:
 
     d1/(d1-d2)
 
-  Let N be inside normal of clipping plane, then
-    d1 is the signed distance between source point and N
-    d2 is the signed distance between destination point and N
+	Where
+    d1 is the signed distance between source point and the clipping plane
+    d2 is the signed distance between destination point and the clipping plane
 
-  Full explanation for this formula here:
-  https://fabiensanglard.net/polygon_codec/clippingdocument/Clipping.pdf
+  This formula is based on the CLIPPING notes by Kenneth I. Joy which can be
+  found on this page:
+  https://fabiensanglard.net/polygon_codec/
 
   @param src source point to lerp from
   @param dst destination point
@@ -37,7 +38,12 @@ public:
   static float signedDistanceRatio(const Vertex4f& src,
                                    const Vertex4f& dst,
                                    int ixyz,
-                                   int planeSign);
+                                   int planeSign)
+  {
+    const float d1 = (src.get(ixyz) - src.w()*planeSign);
+    const float d2 = (dst.get(ixyz) - dst.w()*planeSign);
+    return d1/(d1-d2);
+  }
 
   static std::vector<Triangle> clip(const Triangle& triangle,
                                     int ixyz,
