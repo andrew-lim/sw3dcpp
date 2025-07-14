@@ -4,8 +4,6 @@
 #include "ImageData.h"
 #include "Vertex.h"
 #include <cassert>
-#define _USE_MATH_DEFINES
-#include <cmath>
 
 namespace al { namespace graphics {
 
@@ -18,8 +16,10 @@ public:
     return (fabs(a-b) < 0.000001 && fabs(b-a) < 0.000001);
   }
 
-  static float deg2rad(float deg) { return deg * (M_PI / 180.0); }
-  static float rad2deg(float rad) { return rad * (180.0 / M_PI); }
+  static constexpr auto PI = 3.14159265358979323846;
+
+  static float deg2rad(float deg) { return deg * (PI / 180.0); }
+  static float rad2deg(float rad) { return rad * (180.0 / PI); }
   inline static int clampZero(int v) { return v<0 ? 0 : v; }
   inline static int clampSize(int v, int size) { return v>=size ? size-1 : v; }
   static bool clipLineToRect(int a[2], int b[2],

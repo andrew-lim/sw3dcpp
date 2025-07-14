@@ -1251,11 +1251,11 @@ void GameImpl::updateGame()
   // player's rotation
    if (strafeLeft) {
      strafeMagnitude = _camera.moveSpeed;
-     strafeRotation  = _camera.rot + M_PI / 2;
+     strafeRotation  = _camera.rot + G3D::PI / 2;
    }
    else if (strafeRight) {
      strafeMagnitude = _camera.moveSpeed;
-     strafeRotation  = _camera.rot - M_PI / 2;
+     strafeRotation  = _camera.rot - G3D::PI / 2;
    }
 
    // Add strafing vector to movement vector
