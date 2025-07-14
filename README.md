@@ -5,7 +5,7 @@ Though it is a still a very much work in progress.
 
 You will need a C++ 11 compiler. Currently I'm developing with [Embarcadero Dev-C++](https://github.com/Embarcadero/Dev-Cpp)
 
-All rendering is done first on a custom [ImageData](src/ImageData.h) class which just holds a 2D array of bytes (aka std::uint8_t).
+All rendering is done first on a custom [ImageData](src/ImageData.h) object which holds a one-dimensional array of bytes (of type uint8_t).
 Then the bytes are transferred/blitted to the native screen format. In this case, I'm testing with Win32 GDI where the bytes are
 displayed with [SetDIBitsToDevice](https://learn.microsoft.com/en-us/windows/win32/api/wingdi/nf-wingdi-setdibitstodevice).
 
