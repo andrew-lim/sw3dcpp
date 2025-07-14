@@ -10,7 +10,7 @@ Window::Window( LPCTSTR text, HWND hwndParent, DWORD dwStyle, DWORD dwExStyle )
   , canDestroy( false )
 {
   WNDCLASS wc = {0};
-  wc.lpszClassName = TEXT( "AndrewLim" );
+  wc.lpszClassName = TEXT( "andrewlim_sw3dcpp" );
   wc.hInstance     = GetModuleHandle(0) ;
   //wc.hbrBackground = (HBRUSH)GetStockObject(LTGRAY_BRUSH);
   wc.lpfnWndProc   = wndproc ;

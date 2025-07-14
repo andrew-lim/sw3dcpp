@@ -4,6 +4,8 @@
 #include "ImageData.h"
 #include "Vertex.h"
 #include <cassert>
+#define _USE_MATH_DEFINES
+#include <cmath>
 
 namespace al { namespace graphics {
 
@@ -26,7 +28,7 @@ public:
 
   // Gets the pixel from an ImageData bitmap by converting UV coordinates
   // to bitmap coordinates
-  static u32& pixelAtUV(ImageData& imageData, float u, float v)
+  static u32 pixelAtUV(ImageData& imageData, float u, float v)
   {
     // UV coordinates start from the bottom-left of a texture
     // But ImageData coordinates start from the top-left
@@ -56,7 +58,7 @@ public:
       y = imageH + y;
     }
 
-    return imageData.pixel(x,y);
+    return imageData.getPixel(x,y);
   }
 
   static u32 lightPixel(u32 pixel, float lightStrength)

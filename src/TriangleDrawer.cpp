@@ -85,7 +85,7 @@ inline void TriangleDrawer::scanline(ImageData& imageData,
           }
           pixel = G3D::lightPixel(pixel, lightStrength);
         }
-        imageData.pixel(x, y) = pixel;
+        imageData.setPixel(x, y, pixel);
         if (depthBuffer) {
           depthBuffer->unsafeSet(x, y, depth);
         }
@@ -257,7 +257,7 @@ void TriangleDrawer::barycentricPixel(ImageData& imageData,
       }
       pixel = G3D::lightPixel(pixel, lightStrength);
     }
-    imageData.pixel(x, y) = pixel;
+    imageData.setPixel(x, y, pixel);
     if (depthBuffer) {
       depthBuffer->unsafeSet(x, y, depth);
     }
