@@ -63,11 +63,12 @@ public:
 
   static u32 lightPixel(u32 pixel, float lightStrength)
   {
-      std::uint8_t* rgba = (std::uint8_t*)&pixel;
-      const int r = rgba[0] * lightStrength;
-      const int g = rgba[1] * lightStrength;
-      const int b = rgba[2] * lightStrength;
-      const int a = rgba[3];
+      u8 rgba[4];
+      memcpy(rgba, &pixel, 4);
+      const u8 r = rgba[0] * lightStrength;
+      const u8 g = rgba[1] * lightStrength;
+      const u8 b = rgba[2] * lightStrength;
+      const u8 a = rgba[3];
       return ImageData::makePixel(r, g, b, a);
   }
 
