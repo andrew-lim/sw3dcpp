@@ -1045,65 +1045,69 @@ void GameImpl::createDefaultMesh()
 
   Triangle t;
 
+  // Note: all triangle vertices are defined counter-clockwise
+  // UV coordinates start from the bottom-left (0,0) of an image
+  // Top-right would be (1,1) - this is the same convention as .obj wavefront
+
   // South
   t = Triangle(leftX, topY, frontZ, leftX, bottomY, frontZ,
                rightX, topY, frontZ, pink);
-  t.setTexUVs(0.0, 0.0, 0.0, -1.0, 1.0, -0.0);
+  t.setTexUVs(0.0, 1.0, 0.0, 0.0, 1.0, 1.0);
   _defaultMesh.push_back(t);
 
   t = Triangle(leftX, bottomY, frontZ, rightX, bottomY, frontZ,
                rightX, topY, frontZ, pink);
-  t.setTexUVs(0.0, -1.0, 1.0, -1.0, 1.0, -0.0);
+  t.setTexUVs(0.0, 0.0, 1.0, 0.0, 1.0, 1.0);
   _defaultMesh.push_back(t);
 
   // East
   t = Triangle(rightX, topY, frontZ, rightX, bottomY, frontZ,
                rightX, topY, backZ, green);
-  t.setTexUVs(0.0, 0.0, 0.0, -1.0, 1.0, 0.0);
+  t.setTexUVs(0.0, 1.0, 0.0, 0.0, 1.0, 1.0);
   _defaultMesh.push_back(t);
   t = Triangle(rightX, bottomY, frontZ, rightX, bottomY, backZ,
                rightX, topY, backZ, green);
-  t.setTexUVs(0.0, -1.0, 1.0, -1.0, 1.0, 0.0);
+  t.setTexUVs(0.0, 0.0, 1.0, 0.0, 1.0, 1.0);
   _defaultMesh.push_back(t);
 
   // North
   t = Triangle(rightX, topY, backZ, rightX, bottomY, backZ,
                leftX, topY, backZ, blue);
-  t.setTexUVs(0.0, 0.0, 0.0, -1.0, 1.0, 0.0);
+  t.setTexUVs(0.0, 1.0, 0.0, 0.0, 1.0, 1.0);
   _defaultMesh.push_back(t);
   t = Triangle(rightX, bottomY, backZ, leftX, bottomY, backZ,
                leftX, topY, backZ, blue);
-  t.setTexUVs(0.0, -1.0, 1.0, -1.0, 1.0, 0.0);
+  t.setTexUVs(0.0, 0.0, 1.0, 0.0, 1.0, 1.0);
   _defaultMesh.push_back(t);
 
   // West
   t = Triangle(leftX, topY, backZ, leftX, bottomY, backZ,
                leftX, topY, frontZ, red);
-  t.setTexUVs(0.0, 0.0, 0.0, -1.0, 1.0, 0.0);
+  t.setTexUVs(0.0, 1.0, 0.0, 0.0, 1.0, 1.0);
   _defaultMesh.push_back(t);
   t = Triangle(leftX, bottomY, backZ, leftX, bottomY, frontZ,
                leftX, topY, frontZ, red);
-  t.setTexUVs(0.0, -1.0, 1.0, -1.0, 1.0, 0.0);
+  t.setTexUVs(0.0, 0.0, 1.0, 0.0, 1.0, 1.0);
   _defaultMesh.push_back(t);
 
   // Top
   t = Triangle(leftX, topY, backZ, leftX, topY, frontZ,
                rightX, topY, backZ, yellow);
-  t.setTexUVs(0.0, 0.0, 0.0, -1.0, 1.0, 0.0);
+  t.setTexUVs(0.0, 1.0, 0.0, 0.0, 1.0, 1.0);
   _defaultMesh.push_back(t);
   t = Triangle(leftX, topY, frontZ, rightX, topY, frontZ,
                rightX, topY, backZ, yellow);
-  t.setTexUVs(0.0, -1.0, 1.0, -1.0, 1.0, 0.0);
+  t.setTexUVs(0.0, 0.0, 1.0, 0.0, 1.0, 1.0);
   _defaultMesh.push_back(t);
 
   // Bottom
   t = Triangle(leftX, bottomY, frontZ, leftX, bottomY, backZ,
                rightX, bottomY, frontZ, violet);
-  t.setTexUVs(0.0, 0.0, 0.0, -1.0, 1.0, 0.0);
+  t.setTexUVs(0.0, 1.0, 0.0, 0.0, 1.0, 1.0);
   _defaultMesh.push_back(t);
   t = Triangle(leftX, bottomY, backZ, rightX, bottomY, backZ,
                rightX, bottomY, frontZ, violet);
-  t.setTexUVs(0.0, -1.0, 1.0, -1.0, 1.0, 0.0);
+  t.setTexUVs(0.0, 0.0, 1.0, 0.0, 1.0, 1.0);
   _defaultMesh.push_back(t);
 
   generateMeshNormals(_defaultMesh);
