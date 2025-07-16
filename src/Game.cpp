@@ -1047,7 +1047,7 @@ void GameImpl::createDefaultMesh()
 
   // Note: all triangle vertices are defined counter-clockwise
   // UV coordinates start from the bottom-left (0,0) of an image
-  // Top-right would be (1,1) - this is the same convention as .obj wavefront
+  // Top-right would be (1,1) - this is the same convention as OpenGL?
 
   // South
   t = Triangle(leftX, topY, frontZ, leftX, bottomY, frontZ,
